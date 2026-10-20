@@ -1,0 +1,41 @@
+{
+ "bend_mismatch_mm": 1.595929068023615,
+ "bend_mismatch_mil": 62.83185307179586,
+ "skew_ps_at_eps_3.8": 10.377307367037773,
+ "eps_for_9.5ps": 3.1846480721507615,
+ "two_turns_same_direction_mm": 3.19185813604723,
+ "two_turns_opposite_mm": 0.0,
+ "single_line": {
+  "eps_eff": 3.1539157412982344,
+  "z0_ohm": 64.15199958986106,
+  "skew_ps": 9.454050665376059,
+  "note": "Hammerstad-Jensen, zero thickness, uncoupled line"
+ },
+ "bounds_ps": {
+  "air (eps 1)": 5.323446355757272,
+  "bulk (eps 4.3)": 11.038933315374683
+ },
+ "tuning": {
+  "C": {
+   "N": 2,
+   "A_2NA_rule": 0.3989822670059037,
+   "A_with_chamfers": 0.48685023264993943,
+   "shortfall_if_2NA_used_mm": 0.3514718625761429,
+   "shortfall_ps_single_line": 2.082067970830254
+  },
+  "D": {
+   "N": 4,
+   "A_2NA_rule": 0.19949113350295186,
+   "A_with_chamfers": 0.2873590991469876,
+   "shortfall_if_2NA_used_mm": 0.7029437251522858,
+   "shortfall_ps_single_line": 4.164135941660508
+  },
+  "F": {
+   "N": 1,
+   "A_2NA_rule": 0.7979645340118074,
+   "A_with_chamfers": 0.8858324996558432,
+   "shortfall_if_2NA_used_mm": 0.17573593128807144,
+   "shortfall_ps_single_line": 1.041033985415127
+  }
+ }
+}

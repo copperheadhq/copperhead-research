@@ -1,0 +1,26 @@
+{
+ "variant": "D",
+ "level": "medium",
+ "truncation_dB": {
+  "1": -109.98313256271447,
+  "2": -109.6441637074983,
+  "3": -110.03460387410074,
+  "4": -109.64242180226043
+ },
+ "timesteps": {
+  "1": 27380,
+  "2": 27380,
+  "3": 27380,
+  "4": 27380
+ },
+ "final_energy_dB": {
+  "1": null,
+  "2": null,
+  "3": null,
+  "4": null
+ },
+ "reciprocity_max_abs_diff": 0.0033548035132187127,
+ "passivity_max_singular_value": 0.9883882793624977,
+ "passivity_worst_frequency_Hz": 10000000.0,
+ "power_balance_min": 0.08779776420516205
+}

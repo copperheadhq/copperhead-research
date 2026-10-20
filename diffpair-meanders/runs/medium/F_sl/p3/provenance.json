@@ -1,0 +1,22 @@
+{
+ "variant": "F_sl",
+ "level": "medium",
+ "excited_port": 3,
+ "solver": "openEMS",
+ "solver_version": "v0.37.0-rc3-31-g6761a36",
+ "command": [
+  "/home/animesh/.local/bin/openEMS",
+  "model.xml",
+  "--engine=multithreaded",
+  "--numThreads=1"
+ ],
+ "model_sha256": "cbe273d5f6db9b504c33c5709f87d2e4538ea2ae092912548e96bbeb502d33b1",
+ "started_utc": "2026-10-19T08:05:47+00:00",
+ "wall_seconds": 176.4,
+ "returncode": 0,
+ "timestep_s": 1.43526e-13,
+ "record_time_s": 2e-09,
+ "timesteps": 13935,
+ "cells": 807538.0,
+ "final_energy_dB": null
+}

@@ -1,0 +1,26 @@
+{
+ "variant": "S_tight",
+ "level": "coarse",
+ "truncation_dB": {
+  "1": -109.9707981430125,
+  "2": -111.15064598728935,
+  "3": -109.96826420667969,
+  "4": -111.1507604003911
+ },
+ "timesteps": {
+  "1": 19684,
+  "2": 19684,
+  "3": 19684,
+  "4": 19684
+ },
+ "final_energy_dB": {
+  "1": null,
+  "2": null,
+  "3": null,
+  "4": null
+ },
+ "reciprocity_max_abs_diff": 0.0042391655443016155,
+ "passivity_max_singular_value": 0.9884955195937658,
+ "passivity_worst_frequency_Hz": 10000000.0,
+ "power_balance_min": 0.08801448067789974
+}

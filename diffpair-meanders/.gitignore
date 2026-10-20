@@ -1,0 +1,10 @@
+.venv/
+tools/
+fonts/
+__pycache__/
+build/pages/
+build/scripts_queue1_snapshot/
+build/xml_hashes*.txt
+runs/diag/
+runs/*.log
+report/main.log

@@ -1,0 +1,231 @@
+
+<title>Equal Length, Unequal Delay</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;560;700&display=swap">
+<style>
+/* One reading column, figures allowed to run wider than the text; copperhead's
+   tokens from site/BRAND.md, light first (a blog is read on light ground),
+   dark as its own palette. */
+:root {
+  --ground: #ffffff; --raised: #f7f8fa; --hairline: #e3e7ed;
+  --text: #2b2d32; --muted: #545962; --dim: #686f7a;
+  --accent: #a35d1f; --accent-text: #9a5619; --accent-low: #f8e9db;
+  --plate: #ffffff; --plate-edge: #e3e7ed;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --measure: 40rem; --wide: 56rem;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ground: #1b1b1c; --raised: #232425; --hairline: #343638;
+  --text: #e3e5e8; --muted: #b3b8be; --dim: #8a9098;
+  --accent: #c47a3a; --accent-text: #e6a366; --accent-low: #3b2614;
+  --plate: #ffffff; --plate-edge: #343638; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --ground: #1b1b1c; --raised: #232425; --hairline: #343638;
+  --text: #e3e5e8; --muted: #b3b8be; --dim: #8a9098;
+  --accent: #c47a3a; --accent-text: #e6a366; --accent-low: #3b2614;
+  --plate: #ffffff; --plate-edge: #343638; color-scheme: dark }
+body { background: var(--ground); color: var(--text); font: 400 1.0625rem/1.65 var(--sans);
+  -webkit-font-smoothing: antialiased; }
+.page { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 3rem 5rem; }
+.page > * { max-width: var(--measure); margin-inline: auto; }
+.page > p:has(> img), .page > .table, .page > figure { max-width: var(--wide); }
+.band { height: 4px; background: var(--accent); }
+.eyebrow { font: 500 0.75rem/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-text);
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-bottom: 1.25rem; }
+.eyebrow span { color: var(--dim); }
+h1 { font: 700 clamp(2rem, 1.4rem + 2.4vw, 2.9rem)/1.12 var(--sans); letter-spacing: -0.02em; text-wrap: balance;
+  margin: 0 auto 0.75rem; }
+.dek { color: var(--muted); font-size: 1.15rem; margin-bottom: 2.5rem; }
+h2 { font: 700 1.45rem/1.25 var(--sans); letter-spacing: -0.01em; text-wrap: balance; margin: 3rem auto 0.75rem; }
+p, ul { margin-top: 0; margin-bottom: 1.1rem; }
+ul { padding-left: 1.25rem; }
+li { margin-bottom: 0.4rem; }
+li::marker { color: var(--accent); }
+a { color: var(--accent-text); text-underline-offset: 0.18em; }
+a:hover { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+strong { font-weight: 700; }
+code { font: 0.92em var(--mono); }
+.page > p:has(> img) { margin-block: 1.75rem; }
+img { display: block; width: 100%; height: auto; background: var(--plate); border: 1px solid var(--plate-edge);
+  border-radius: 6px; padding: 0.75rem; box-sizing: border-box; }
+.caption { display: block; font-size: 0.875rem; color: var(--dim); margin-top: 0.5rem; }
+.table { overflow-x: auto; margin-block: 1.5rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+th { text-align: left; font: 500 0.75rem/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); border-bottom: 1.5px solid var(--text); padding: 0.4rem 0.75rem 0.4rem 0; }
+td { border-bottom: 1px solid var(--hairline); padding: 0.45rem 0.75rem 0.45rem 0; vertical-align: top; }
+.note { border-top: 1px solid var(--hairline); margin-top: 3rem; padding-top: 1.25rem; color: var(--muted);
+  font-size: 0.95rem; }
+</style>
+<div class="band"></div>
+<main class="page">
+<div class="eyebrow">Signal integrity<span>2026-10-19</span><span>Animesh Chouhan, Copperhead</span></div>
+<h1>Equal length is not equal delay: serpentine tuning under a field solver</h1>
+<p class="dek">We solved a bent differential pair and six ways of tuning it in openEMS. Matching the lengths exactly removed 44 to 75 % of the skew.</p>
+<p>A differential pair that turns through a U-bend comes out of it with one trace shorter than the other. The usual
+fix is a serpentine on the short trace that adds the missing length back. A recent illustration of this made the
+rounds (<a href="https://x.com/CorneliusWrites/status/2110776676795953595">@CorneliusWrites on X</a>): at a 20 mil pitch the
+inner trace arrives about 9.5 ps early, and about 1.6 mm of serpentine puts it back in step.</p>
+<p>The geometry in that picture is right. What it takes for granted is the step from equal <em>length</em> to equal
+<em>delay</em>. We wanted to know how good that step is, so we built the bend and six ways of tuning it, solved each one
+as a full four-port in a field solver, and looked at what arrives at the receiver.</p>
+<p>In short: <strong>tuning that makes the two traces exactly equal in length left 2.3 to 5.2 ps of the
+original 9.3 ps.</strong> The worst offender was the densest accordion. A transmission-line model given the same
+lengths predicted less than 1 ps.</p>
+<h2>The bend is what geometry says</h2>
+<p>Two concentric arcs that turn through 180 degrees differ in length by π times their spacing, whatever the radius.
+At s = 0.508 mm (20 mil) that is 1.596 mm, or 62.8 mil. Multiply by √ε_eff / c and you have the skew.</p>
+<p><img src="img/fig_bend.png" alt="The U-bend: P is the inner trace, N the outer. The arcs differ by πs." loading="lazy"><span class="caption">The U-bend: P is the inner trace, N the outer. The arcs differ by πs.</span></p>
+<p>The answer depends on which ε_eff you use. At ε_eff = 3.8 it is 10.4 ps; the 9.5 ps in the illustration
+corresponds to ε_eff = 3.18. Our stackup (0.2 mm of ε_r 4.3 under 0.25 mm traces) has a single-line
+ε_eff of 3.15 by the Hammerstad–Jensen closed form, which gives <strong>9.45 ps</strong>. The field solver
+says <strong>9.3 ps</strong>. For the untuned bend, geometry is within 2 %.</p>
+<h2>Six ways to fix it, one fixture</h2>
+<p>Every variant below shares the same stackup, the same launches and the same 12 mm legs. Only the tuning changes.
+In C, D and F the amplitude of the excursions is solved so that P and N come out <em>exactly</em> equal in centreline
+length, chamfered corners included. E is a control: both traces swing out together, which adds delay to the pair
+but leaves the difference between them alone.</p>
+<p><img src="img/fig_families.png" alt="The variants, drawn from the copper the solver sees." loading="lazy"><span class="caption">The variants, drawn from the copper the solver sees.</span></p>
+<p><img src="img/fig_tuning_zoom.png" alt="The tuning sections at one scale." loading="lazy"><span class="caption">The tuning sections at one scale.</span></p>
+<p>Each variant is four runs of <a href="https://docs.openems.de/en/latest/intro.html">openEMS</a>, one per excited port, with
+50 Ω lumped ports at each trace end. That gives a full 4×4 S-matrix, which
+<a href="https://scikit-rf.readthedocs.io/en/latest/api/generated/skrf.network.Network.se2gmm.html">scikit-rf</a> turns into
+mixed-mode parameters, and a differential step with a 50 ps edge turns into the waveforms at the far end. In all
+we made 140 solver runs. The untuned bend and two of the tunings were also solved on finer and coarser meshes:
+the bend's skew moves by ±0.05 ps between them, C's by ±0.3 ps, and the dense accordion's, whose
+features are the smallest, by ±0.4 ps.</p>
+<p><img src="img/fig_ports.png" alt="Ports, cross-section and the pipeline." loading="lazy"><span class="caption">Ports, cross-section and the pipeline.</span></p>
+<h2>Matching the lengths does not match the delay</h2>
+<p><img src="img/fig_skew.png" alt="Skew at the receiver for each variant. Copper bars are tuned to exactly equal length." loading="lazy"><span class="caption">Skew at the receiver for each variant. Copper bars are tuned to exactly equal length.</span></p>
+<div class="table"><table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>What it is</th>
+<th>Skew left</th>
+<th>Share of the bend's skew removed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B</td>
+<td>untuned bend</td>
+<td>9.3 ps</td>
+<td>none</td>
+</tr>
+<tr>
+<td>F</td>
+<td>one broad trombone</td>
+<td>2.3 ps</td>
+<td>75 %</td>
+</tr>
+<tr>
+<td>C</td>
+<td>two sparse excursions</td>
+<td>3.6 ps</td>
+<td>61 %</td>
+</tr>
+<tr>
+<td>C far</td>
+<td>the same, at the launch</td>
+<td>4.4 ps</td>
+<td>53 %</td>
+</tr>
+<tr>
+<td>D</td>
+<td>dense accordion, four excursions</td>
+<td>5.2 ps</td>
+<td>44 %</td>
+</tr>
+<tr>
+<td>E</td>
+<td>pair-level excursion</td>
+<td>9.4 ps</td>
+<td>none, by design</td>
+</tr>
+</tbody>
+</table></div>
+<p>Every tuned variant has P and N exactly the same length, and every one still lets P arrive first. The waveforms
+show it directly:</p>
+<p><img src="img/fig_waveforms.png" alt="Far-end P and −N, and the common-mode voltage, for a 50 ps edge." loading="lazy"><span class="caption">Far-end P and −N, and the common-mode voltage, for a 50 ps edge.</span></p>
+<p>The more excursions, the less of the skew comes back. One excursion removed 75 %,
+two removed 61 %, four removed 44 %.</p>
+<h2>Where the delay goes</h2>
+<p>We built a two-conductor transmission-line model of every variant, calibrated on the solver's own straight pair,
+so its coupled lines are the solver's coupled lines. It knows every length exactly. It predicts 0.2, 0.3
+and 0.3 ps for F, C and D. So length is not what is missing. What the line model does not know is the
+corners of each excursion and the coupling between its folds.</p>
+<p>To pull those two apart we ran one more experiment: a straight pair with 6 mm added to one trace in three
+excursions, once with the folds 1.0 mm apart and once 0.15 mm apart (our clearance rule). Same corners, same added
+length. We define a delay efficiency η as the delay the tuning actually adds, divided by what its length predicts.</p>
+<p><img src="img/fig_eta.png" alt="Delay efficiency of each tuning style." loading="lazy"><span class="caption">Delay efficiency of each tuning style.</span></p>
+<p>With loose folds η = 0.84. Packing the folds to the clearance rule took it to 0.68, and on every
+mesh we tried the tight folds came out 17 to 25 points lower: that is the
+fold coupling that <a href="https://doi.org/10.1109/96.475270">Wu and Chao</a> and
+<a href="https://doi.org/10.1109/22.868994">Rubin and Singh</a> described for single-ended meanders. The loose serpentine's
+own shortfall we attribute to its corners. In the bend corrections each excursion cost 1.2 to
+2.1 ps of delay that its length says it should have added. That cost does not shrink with the
+excursion's size, so a fix made of many small excursions under-delivers the most.</p>
+<h2>Stripline does the same</h2>
+<p>Microstrip has two propagation velocities, one per mode, so it was fair to ask whether all this is a microstrip
+quirk. We put the same copper between two planes and solved it again. Stripline is homogeneous, and geometry
+predicts its bend to 0.6 % (10.97 ps against 11.04 ps). The length-matched tunings
+removed 81, 64 and 42 % of the skew, close to microstrip's 75,
+61 and 44 %. Tight folds still cost 20 points of efficiency. We had expected that to
+shrink, since far-end coupling between parallel lines vanishes in stripline. It did not: adjacent folds carry
+current in opposite directions, so the coupling that shortcuts them is backward coupling, and stripline has that
+too.</p>
+<p><img src="img/fig_stripline.png" alt="Delay efficiency of the same copper in microstrip and stripline." loading="lazy"><span class="caption">Delay efficiency of the same copper in microstrip and stripline.</span></p>
+<h2>Where you put it matters at high frequency</h2>
+<p>C far is the same tuning as C, moved next to the launch. Its arrival skew is similar (4.4 ps against
+3.6 ps). Its mode conversion is not: between the tuning and the bend the pair carries skew the other way, and
+the two corrections drift out of phase as frequency rises. Read as a skew, C far's grows from 4.1 ps at
+5 GHz to 6.5 ps at 25 GHz, while C stays flat.</p>
+<p><img src="img/fig_fd_skew.png" alt="Skew read from Scd21/Sdd21 at each frequency." loading="lazy"><span class="caption">Skew read from Scd21/Sdd21 at each frequency.</span></p>
+<h2>The trombone pays in impedance</h2>
+<p>The broad trombone removed the most skew, but its trace leaves its partner for 3 mm, and the differential
+impedance there rises to 114 Ω against 107 Ω for the plain bend. Its return loss is the worst of the set
+(-16.8 dB against -20.7 dB).</p>
+<p><img src="img/fig_tdr.png" alt="Differential TDR, 35 ps edge." loading="lazy"><span class="caption">Differential TDR, 35 ps edge.</span></p>
+<h2>What 9 ps of skew does to a signal</h2>
+<p>At 16 Gb/s with 35 ps edges, the untuned bend closes the differential eye from 92.9 % to 91.1 % of the
+swing. That is small. What it does more of is turn the signal into common mode: 13.6 % of the swing peak to
+peak at the receiver, against 3.3 % for the trombone and 5.4 % for C. A receiver with good common-mode
+rejection will not notice the timing. Whether the common mode becomes an emissions problem depends on the rest of
+the board, which this study does not model.</p>
+<p><img src="img/fig_eye.png" alt="16 Gb/s eyes and the common mode at the receiver." loading="lazy"><span class="caption">16 Gb/s eyes and the common mode at the receiver.</span></p>
+<h2>Sizing the tuning by its effect</h2>
+<p>If each excursion loses a fixed amount, the fix is to add that amount back. We lengthened C, D and F by their own
+residual, converted to length at the rate the bend shows. By CAD measure P is now longer than N, and a length-based model says these versions overshoot, to
+-1.9 ps for the trombone, -3.0 ps for C and -4.5 ps for D. In the solver the skew became 0.2 ps for the trombone and 0.6 ps for C: one iteration was enough. The dense
+accordion came down only to 1.9 ps. Lengthening its tightly packed verticals also strengthens the coupling
+between them, so each extra millimetre delivered 62 % of the delay it should have, against 83 % for C
+and 92 % for the trombone. A dense accordion needs a second iteration; a sparse or broad one is calibrated
+by one field solution, or one set of coupons, per stackup.</p>
+<p><img src="img/fig_pareto.png" alt="Four objectives, two projections: skew against area and against return loss." loading="lazy"><span class="caption">Four objectives, two projections: skew against area and against return loss.</span></p>
+<h2>Rules of thumb</h2>
+<p>For edge-coupled pairs at about this pitch, in microstrip or stripline, and with the caveat that these are
+simulations:</p>
+<ul>
+<li>Trust geometry for the bend. Do not trust it for the fix: budget a residual of a few picoseconds, or size the
+  tuning from a field solution or a coupon.</li>
+<li>Use few excursions. Each one costs delay in its corners whatever its size.</li>
+<li>Keep the folds apart. At the clearance rule the folds cost 17 to 25 points of efficiency.</li>
+<li>Tune next to the mismatch, not at the end of the route.</li>
+<li>Keep a broad excursion short, or it shows up in the TDR.</li>
+<li>Swinging the whole pair out does not fix intra-pair skew.</li>
+<li>None of this goes away in stripline.</li>
+</ul>
+<h2>What this is and is not</h2>
+<p>Everything above is simulated: one width and one pitch in one microstrip and one stripline stackup, lumped
+ports, perfect return planes and a conducting-sheet copper model. Nothing was built or measured. The full report covers the method, the mesh
+convergence, the numerical checks, a coupon plan to test these
+predictions on hardware, and the limitations.</p>
+<p>The report, the scripts, the S-parameter files and every figure are in the study's repository. Every number in
+this post is read from the simulation results by a script, not typed in.</p>
+</main>

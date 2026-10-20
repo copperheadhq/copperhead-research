@@ -1,0 +1,65 @@
+{
+ "A": {
+  "returncode": 0,
+  "violations_by_type": {
+   "track_dangling": 2,
+   "isolated_copper": 1
+  },
+  "clearance_or_short_violations": 0,
+  "kicad_version": "10.0.6"
+ },
+ "B": {
+  "returncode": 0,
+  "violations_by_type": {
+   "track_dangling": 4,
+   "isolated_copper": 1
+  },
+  "clearance_or_short_violations": 0,
+  "kicad_version": "10.0.6"
+ },
+ "C": {
+  "returncode": 0,
+  "violations_by_type": {
+   "track_dangling": 4,
+   "isolated_copper": 1
+  },
+  "clearance_or_short_violations": 0,
+  "kicad_version": "10.0.6"
+ },
+ "C_far": {
+  "returncode": 0,
+  "violations_by_type": {
+   "track_dangling": 4,
+   "isolated_copper": 1
+  },
+  "clearance_or_short_violations": 0,
+  "kicad_version": "10.0.6"
+ },
+ "D": {
+  "returncode": 0,
+  "violations_by_type": {
+   "track_dangling": 4,
+   "isolated_copper": 1
+  },
+  "clearance_or_short_violations": 0,
+  "kicad_version": "10.0.6"
+ },
+ "E": {
+  "returncode": 0,
+  "violations_by_type": {
+   "track_dangling": 4,
+   "isolated_copper": 1
+  },
+  "clearance_or_short_violations": 0,
+  "kicad_version": "10.0.6"
+ },
+ "F": {
+  "returncode": 0,
+  "violations_by_type": {
+   "track_dangling": 4,
+   "isolated_copper": 1
+  },
+  "clearance_or_short_violations": 0,
+  "kicad_version": "10.0.6"
+ }
+}

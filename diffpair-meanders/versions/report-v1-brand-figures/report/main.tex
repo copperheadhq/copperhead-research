@@ -1,0 +1,622 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[letterpaper,margin=0.72in,columnsep=0.26in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{xcolor}
+\usepackage[font=small,labelfont=bf,skip=4pt]{caption}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor={black},citecolor={black},urlcolor={blue!60!black}]{hyperref}
+\graphicspath{{../figures/report/}}
+\input{generated/numbers.tex}
+% fallbacks for results not yet computed: they print as ?? so a draft shows the gap
+\newcommand{\Missing}{\textbf{??}}
+\providecommand{\AddedCcal}{\Missing}
+\providecommand{\AddedDcal}{\Missing}
+\providecommand{\AddedFcal}{\Missing}
+\providecommand{\CalMax}{\Missing}
+\providecommand{\CalMin}{\Missing}
+\providecommand{\ConvMonoD}{\Missing}
+\providecommand{\SkewCcal}{\Missing}
+\providecommand{\SkewDcal}{\Missing}
+\providecommand{\SkewFcal}{\Missing}
+\providecommand{\GciD}{\Missing}
+\newcommand{\Sdd}[1]{S_{dd#1}}
+\newcommand{\Scd}[1]{S_{cd#1}}
+\newcommand{\Scc}[1]{S_{cc#1}}
+\newcommand{\eeff}{\varepsilon_{\mathrm{eff}}}
+\renewcommand{\topfraction}{0.92}\renewcommand{\dbltopfraction}{0.92}
+\renewcommand{\bottomfraction}{0.6}\renewcommand{\textfraction}{0.06}
+\renewcommand{\floatpagefraction}{0.75}\renewcommand{\dblfloatpagefraction}{0.75}
+\setcounter{topnumber}{4}\setcounter{dbltopnumber}{3}\setcounter{bottomnumber}{2}\setcounter{totalnumber}{6}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{6pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{8pt plus 2pt minus 2pt}
+
+\title{\vspace{-1.2em}\textbf{Beyond Length Matching: Electromagnetic Verification and\\ Optimization of Differential-Pair Meanders}}
+\author{\textbf{Animesh Chouhan}\\ Copperhead\\ \href{mailto:animesh@copperhead.sh}{\texttt{animesh@copperhead.sh}}}
+\date{October 19, 2026}
+
+\begin{document}
+\twocolumn[
+\maketitle
+\vspace{-0.6em}
+{\centering\large\bfseries Abstract\par}
+\vspace{0.5em}
+\begin{quote}
+\small
+A 180-degree U-bend in a differential pair makes the inner trace shorter by $\pi s$, and the usual fix is a
+serpentine that adds the same length back. We test that fix with full-wave simulation instead of assuming it. A controlled four-port fixture
+($s = 0.508$\,mm, 20\,mil) is solved in openEMS (FDTD) for \GeomCount{} geometries in microstrip and stripline,
+\RunCount{} single-port-excited runs in all, and every result is taken through mixed-mode S-parameters
+to receiver waveforms. The untuned bend gives \SkewB\,ps of skew, against \SkewSingle\,ps from geometry and the
+single-line effective permittivity. Tuning that makes the two centrelines exactly equal in length removes only
+\RemovedPctD--\RemovedPctF\,\% of that skew: \SkewF--\SkewD\,ps remain (numerical uncertainty $\pm$\UncF{} to $\pm$\UncD\,ps), and the
+shortfall grows with the number of excursions. A transmission-line model built from the same lengths predicts
+less than 1\,ps. A serpentine experiment attributes the gap to the corners of each excursion and to coupling
+between its folds (delay efficiency \EtaSloose{} with folds 1.0\,mm apart, \EtaStight{} at 0.15\,mm). The same
+copper in stripline behaves the same way, so the shortfall is not a microstrip effect. The skew
+barely closes a 16\,Gb/s differential eye (\EyeHA\,\% to \EyeHB\,\% of the swing) but turns \EyeVcB\,\% of it into
+common mode. Sizing the tuning from its own residual in one more EM iteration brings the skew to \SkewFcal\ and
+\SkewCcal\,ps for the broad and sparse tunings, but only to \SkewDcal\,ps for the dense accordion, whose added
+amplitude couples across its folds too. Everything here is simulated; nothing is measured, and a coupon plan for doing so is
+given.
+\end{quote}
+\vspace{1.0em}
+]
+
+\section{Introduction}
+
+Length matching is the standard answer to intra-pair skew. A widely shared illustration~\cite{xpost} shows the
+inner trace of a U-bend arriving about 9.5\,ps early at 20\,mil pitch, corrected by a serpentine of about
+1.6\,mm. The geometry is right, and the delay estimate is reasonable for a common stackup. What the picture does
+not establish is the step from equal \emph{length} to equal \emph{delay}: a serpentine changes the coupling
+between the two traces where it leaves its partner, adds corners, and couples to itself across its folds. None of
+this appears in a CAD length report.
+
+This paper asks one question: when a bent pair is tuned to equal centreline length, how much of the skew is
+actually removed, and at what cost in reflection, mode conversion and board area? We answer it for one microstrip stackup by
+full-wave simulation of a controlled fixture, check it in stripline, with a transmission-line model beside it to separate what length
+explains from what it does not.
+
+Contributions: (i) a fixture and parameter set in which only the tuning changes (Section~\ref{sec:geometry});
+(ii) four-port full-wave extraction with mesh convergence and an uncertainty in picoseconds
+(Sections~\ref{sec:model},~\ref{sec:verification}); (iii) the simulated delay efficiency of four tuning styles and
+two serpentines, in both media (Section~\ref{sec:results}); (iv) an EM-informed sizing step and a Pareto comparison
+(Section~\ref{sec:optimization}); (v) a coupon plan to check the predictions in hardware
+(Section~\ref{sec:validation}). The scripts and data are released with the report (Section~\ref{sec:repro}).
+
+\textbf{What is and is not claimed.} Every curve and number in Sections~\ref{sec:results}
+and~\ref{sec:optimization} is a simulation result. Section~\ref{sec:geometry} is analytical and is labelled so.
+No hardware was built and nothing was measured. Mode conversion is reported as $\Scd{21}$ and as common-mode
+voltage at the receiver; neither is radiated emission, and no emission claim is made.
+
+\section{Background}
+
+A symmetric coupled pair carries two quasi-TEM modes. The odd mode carries the differential signal; the even mode
+carries common mode. In microstrip the odd mode has more of its field in air, so its effective permittivity is
+lower and it travels faster~\cite{paul_mtl}. A length mismatch between the two traces converts part of a
+differential wave into common mode; the converted energy then travels at the even-mode velocity.
+
+Mixed-mode S-parameters~\cite{bockelman1995,ferrero2006} express this directly: $\Sdd{21}$ is differential
+transmission, $\Sdd{11}$ differential reflection, and $\Scd{21}$ the common mode that leaves port~2 when
+differential mode enters port~1. For a pair whose two paths differ only by a delay $\Delta\tau$ and whose modes do
+not interact,
+\begin{equation}
+  \left|\frac{\Scd{21}}{\Sdd{21}}\right| = \left|\tan\frac{\omega\Delta\tau}{2}\right|,
+  \label{eq:fdskew}
+\end{equation}
+which we invert to give a frequency-resolved skew. Earlier work on single-ended serpentines found that coupling
+between adjacent segments makes a meander electrically shorter than its length~\cite{wu1995,rubin2000}. Whether
+that matters at the scale of a single bend correction, and in a pair, is what we test.
+
+\section{Geometry and analytical estimates}
+\label{sec:geometry}
+
+\textbf{The bend.} Two concentric arcs that turn through $\theta$ with centreline spacing $s$ differ in length by
+\begin{equation}
+  \Delta L = (R + s)\,\theta - R\,\theta = s\,\theta ,
+  \label{eq:dl}
+\end{equation}
+independent of the radius $R$ (Fig.~\ref{fig:bend}). For a single 180-degree U-turn and $s = 20$\,mil
+$= 0.508$\,mm, $\Delta L = \pi s = \BendDL$\,mm $= \BendDLmil$\,mil. Two 180-degree turns in the same direction
+double this ($2\pi s$); two in opposite directions cancel in length, but the pair carries the skew, and its common
+mode, between them. The nominal delay difference is
+\begin{equation}
+  \Delta t = \Delta L \sqrt{\eeff}/c .
+  \label{eq:dt}
+\end{equation}
+With $\eeff = 3.8$, Eq.~\eqref{eq:dt} gives \SkewEpsThreeEight\,ps; the illustrated 9.5\,ps corresponds to
+$\eeff = \EpsNineFive$, a faster line. For our stackup the closed form of Hammerstad and
+Jensen~\cite{hammerstad1980} gives a single (uncoupled) line $\eeff = \EpsSingle$ and $Z_0 = \ZSingle\,\Omega$, so
+$\Delta t = \SkewSingle$\,ps. The odd- and even-mode values we extract below
+($\eeff = \EpsOdd$ and \EpsEven) bracket this at \SkewOdd\ and \SkewEven\,ps. Eq.~\eqref{eq:dt} uses one
+velocity; a coupled pair has two, which is the first thing it omits.
+
+\textbf{The tuning rule.} $N$ rectangular excursions of amplitude $A$ add
+\begin{equation}
+  \Delta L_\mathrm{add} \approx 2NA
+  \label{eq:2na}
+\end{equation}
+of centreline. Eq.~\eqref{eq:2na} omits: the length each corner treatment removes (a 45-degree chamfer of leg $c$
+removes $(2-\sqrt{2})c$ per corner, $4(2-\sqrt{2})c$ per excursion, which we correct for exactly); the change of
+mode where the tuned trace leaves its partner; the change in differential impedance over that stretch; the corner
+as a discontinuity whose electrical length differs from its centreline; and coupling between the folds of the
+excursion. Only the first is geometry. In our fixtures the amplitude is solved so that the two centrelines are
+equal to well under a micrometre after the chamfers are cut; the 2NA rule alone would leave the dense accordion
+\ShortfallD\,mm short.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_bend}
+\caption{\textbf{Analytical.} Centrelines of P (inner) and N (outer) around the 180-degree bend of fixture B. The
+arc lengths differ by $\pi s$ whatever the radius.}
+\label{fig:bend}
+\end{figure}
+
+\textbf{The fixture.} One microstrip layer over a return plane (Fig.~\ref{fig:ports}, Table~\ref{tab:params}):
+$h = 0.2$\,mm, $\varepsilon_r = 4.3$, $w = 0.25$\,mm, $s = 0.508$\,mm. Every bent variant uses the same U-bend
+($R = 1.5$\,mm for P), the same 12\,mm legs and the same launch plane, so only the tuning differs
+(Fig.~\ref{fig:families}):
+A, a straight pair of the U-bend's mean length; B, the untuned bend; C, two sparse excursions next to the bend;
+C far, the same two excursions next to the launch; D, a dense accordion of four; F, one broad trombone; and E, a
+pair-level raised-cosine excursion of both traces together, a control whose net turning angle is zero and which
+therefore leaves the length difference unchanged. Each single-trace tuning is cut into P on the leg leading into
+the bend and turns away from N. Every route length change is intentional and listed in
+Table~\ref{tab:metrics}. Clearance between P and N copper is checked by our generator and by KiCad~10's DRC
+(\texttt{kicad-cli pcb drc}, 0.15\,mm rule): no clearance or short violation in any variant. KiCad does not check
+spacing within one net, so the fold spacing is set by the parameters: \FoldD\,mm edge to edge in D.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.93\textwidth]{fig_families}
+\caption{The variants, drawn from the copper polygons that go into the EM model, at one scale. Every tuned variant
+(C, C far, D, F) has P and N exactly equal in centreline length; $A$ is the solved excursion amplitude.}
+\label{fig:families}
+\end{figure*}
+
+\begin{table}[t]
+\centering
+\caption{Parameters. All values are \textbf{proposed} for this study; none is calibrated to a laminate or a
+fabricator.}
+\label{tab:params}
+\scriptsize
+\adjustbox{max width=\columnwidth}{\input{generated/table_parameters.tex}}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_ports}\\[4pt]
+\includegraphics[width=\textwidth]{fig_pipeline}
+\caption{Top: cross-section, true scale, and fixture B with its four lumped ports on the launch plane and their
+mixed-mode mapping. Bottom: the pipeline. Each run keeps its model, its solver log and a provenance record
+(solver version, model hash, wall time, timesteps); each variant keeps its \texttt{.s4p} and its checks.}
+\label{fig:ports}\label{fig:pipeline}
+\end{figure*}
+
+\section{Numerical model}
+\label{sec:model}
+
+\subsection{Stage II: a two-conductor line model}
+
+For the pair, the coupled telegrapher equations are
+\begin{equation}
+  \frac{\mathrm{d}\mathbf{V}}{\mathrm{d}x} = -(\mathbf{R} + j\omega\mathbf{L})\,\mathbf{I}, \qquad
+  \frac{\mathrm{d}\mathbf{I}}{\mathrm{d}x} = -(\mathbf{G} + j\omega\mathbf{C})\,\mathbf{V},
+  \label{eq:telegrapher}
+\end{equation}
+with $2\times2$ per-unit-length matrices whose off-diagonal terms are the coupling~\cite{paul_mtl}. For a
+symmetric pair the even and odd modes diagonalise them. Rather than assume a cross-section, we calibrate the modes
+on the full-wave straight fixture A: its $\Sdd{}$ (100\,$\Omega$) and $\Scc{}$ (25\,$\Omega$) are each the
+two-port of a uniform line, from which the extraction of Eisenstadt and Eo~\cite{eisenstadt1992} gives
+$Z_\mathrm{odd} = \ZOdd\,\Omega$ ($Z_\mathrm{diff} = \ZDiff\,\Omega$), $Z_\mathrm{even} = \ZEven\,\Omega$
+($Z_\mathrm{comm} = \ZComm\,\Omega$), $\eeff = \EpsOdd$ (odd) and \EpsEven{} (even), with loss and dispersion,
+from 0.5 to 10\,GHz. Each variant is then a cascade of chain matrices: coupled sections where the traces run
+together, and uncoupled single lines (Hammerstad--Jensen parameters) where P leaves N or where N's excess lies in
+the bend, spread over 18 slices. The model knows every length. It does not know corners, coupling between the
+folds of a meander, coupling across the U, or the bend as a discontinuity, which is exactly what makes it useful
+as a reference: where it disagrees with full wave, length is not the explanation.
+
+\subsection{Stage III: full-wave extraction}
+
+The solver is openEMS~\cite{openems_intro,liebig2013}, an equivalent-circuit FDTD code, version
+\texttt{\SolverVersion}. Its Python bindings were not installed on the host, so the model is written directly in
+the XML vocabulary those bindings produce, which we had checked against this openEMS version before. The
+signal copper is a conducting sheet (35\,$\mu$m, 58\,MS/m) drawn from the generator's polygons; the return plane is
+the PEC floor of the domain; the dielectric is a lossy box (Table~\ref{tab:params}; openEMS models the loss as a
+fixed conductivity, so $\tan\delta$ falls as $1/f$). The other five faces are first-order Mur absorbing
+boundaries~\cite{mur1981}, at least 2\,mm (10$h$) from any copper laterally and 2.5\,mm above it.
+
+Each trace end has a 50\,$\Omega$ lumped port from the plane to the copper, on the launch plane $x = 0$
+(Fig.~\ref{fig:ports}). Ports are numbered in scikit-rf's mixed-mode order~\cite{skrf_se2gmm}: 1 = P near,
+2 = N near, 3 = P far, 4 = N far. Each variant takes four runs, each exciting one port with the other three
+passive~\cite{openems_ports}, with a Gaussian pulse covering 0 to 30\,GHz. From each port's voltage $u_k$ and
+current $i_k$ (into the structure), the power waves~\cite{kurokawa1965}
+$a_k = (u_k + Z_0 i_k)/(2\sqrt{Z_0})$ and $b_k = (u_k - Z_0 i_k)/(2\sqrt{Z_0})$ give $S_{kj} = b_k/a_j$; the
+result is written as a Touchstone \texttt{.s4p} from DC to 30\,GHz in 10\,MHz steps.
+
+The mesh is rectilinear and graded: finest cells over the copper regions (60, 40 and 27\,$\mu$m for the coarse,
+medium and fine levels, with every straight trace edge on a grid line), growing by at most 1.3 per cell to
+0.15\,mm laterally and 0.3\,mm in the air. All bent variants share one mesh per level, built over the union of
+their copper, so discretisation error in the copper they share is common to them. The medium mesh of the bent
+fixtures has \CellsMedium\,M cells; the fine one \CellsFine\,M. The arcs and chamfers are staircased.
+
+One behaviour of the solver needed care. The pulse's DC content leaves a static field in the domain whose energy
+settles near $-38$\,dB, so no run reaches an energy end criterion; a pulse without DC content does, but it
+measures nothing useful below about 2\,GHz. Every run therefore stops at a fixed 2\,ns of simulated time, by which
+the port voltages have fallen at least \TruncWorst\,dB below their peak (Table~\ref{tab:checks}); on fixture B
+(coarse mesh, port 1 excited) a 7\,ns record changes the low-frequency S-parameters by about $10^{-3}$.
+
+\section{Analysis metrics}
+\label{sec:metrics}
+
+\textbf{Mixed mode.} \texttt{se2gmm(p=2)} on the order above gives $d_\mathrm{near}, d_\mathrm{far},
+c_\mathrm{near}, c_\mathrm{far}$, so $\Sdd{11}=S_{00}$, $\Sdd{21}=S_{10}$, $\Scd{21}=S_{30}$ (zero-based), with
+reference impedances of 100\,$\Omega$ differential and 25\,$\Omega$ common, in scikit-rf~\cite{arsenovic2022}. We
+checked this convention against the scikit-rf 2.2.0 source rather than its rendered documentation.
+
+\textbf{Waveforms.} A differential step of 1\,V open circuit (+1\,V and $-1$\,V, each behind 50\,$\Omega$) with a
+Gaussian edge of 10--90\,\% rise time $t_r$ drives ports 1 and 2; ports 3 and 4 are 50\,$\Omega$ to the plane
+(100\,$\Omega$ differential, 25\,$\Omega$ common). Far-end voltages follow by superposition from the four-port in
+the frequency domain and an inverse FFT; nothing is fitted. $V_d = V_P - V_N$, $V_c = (V_P + V_N)/2$.
+
+\textbf{Skew} is $t_{50}(N\ \text{falling}) - t_{50}(P\ \text{rising})$ at the far end, each at half its own final
+value; positive means P, the inner trace, arrives first. We report 50\,ps edges unless stated, and 35 to 300\,ps
+in Section~\ref{sec:results}. Edges faster than 35\,ps are not evaluated, because the simulated band ends at
+30\,GHz.
+
+\textbf{Delay efficiency.}
+\begin{equation}
+  \eta = \frac{t_\mathrm{skew,ref} - t_\mathrm{skew}}{\Delta L_\mathrm{add}\sqrt{\eeff^\mathrm{single}}/c},
+  \label{eq:eta}
+\end{equation}
+where the reference is the identical untuned fixture (B, or the straight serpentine reference), $\Delta
+L_\mathrm{add}$ is the centreline the tuning adds to P, and $\eeff^\mathrm{single} = \EpsSingle$
+(\PsPerMm\,ps/mm) is the velocity a designer's length-to-delay conversion would use. $\eta = 1$ means the delay
+is what the length predicts. On the same basis the untuned bend has $\eta = \BendEta$.
+
+\textbf{Other metrics}, each over 0.1--20\,GHz unless stated: worst $|\Sdd{11}|$; RMS $|\Scd{21}|$; differential
+TDR impedance from the step response of $\Sdd{11}$ with a 35\,ps edge; the frequency-resolved skew of
+Eq.~\eqref{eq:fdskew}; a PRBS7 eye at 10\,Gb/s (50\,ps edges) and 16\,Gb/s (35\,ps edges), with height at the
+best phase and width where the eye is open by more than 10\,\% of the swing; and the board area of the tuning,
+its length times its amplitude. No interface specification is assumed: wherever a pass or fail would need one, the
+target is illustrative and is to be selected for the intended interface.
+
+\begin{table*}[t]
+\centering
+\caption{Metrics, medium mesh, 50\,ps edge. $\Delta L_\mathrm{add}$ is the centreline the tuning adds to P;
+$\eta$ is Eq.~\eqref{eq:eta}; MTL is the line model's skew; $|\Sdd{11}|$ and $|\Scd{21}|$ over 0.1--20\,GHz;
+$Z_\mathrm{diff}$ from TDR. Skew bounds: each variant's own GCI where it was solved on three meshes, else that of the converged variant
+whose smallest features it shares (Section~\ref{sec:verification}).}
+\label{tab:metrics}
+\footnotesize
+\adjustbox{max width=\textwidth}{\input{generated/table_metrics.tex}}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_waveforms}
+\caption{Far-end P and $-$N for a differential step (50\,ps edge), and the common-mode voltage. Dotted lines mark
+each 50\,\% crossing.}
+\label{fig:waveforms}
+\end{figure*}
+
+\section{Verification of the numerics}
+\label{sec:verification}
+
+Table~\ref{tab:checks} lists the checks for every variant. Reciprocity holds to $|S_{ij}-S_{ji}| \le$
+\RecipMax{} (the straight fixture, symmetric by construction, to \RecipA). Every four-port is passive: the
+largest singular value of $S$ over the band is \PassB{} for B and no more than \PassMax{} for any variant. Every
+record ends with its port voltages at least \TruncWorst\,dB below their peak.
+
+\textbf{Convergence.} B, C, D and the serpentine set were solved on three meshes, and D on a fourth
+(Table~\ref{tab:conv}, Fig.~\ref{fig:conv}). We report Roache's grid convergence index~\cite{roache1994}
+over the three finest meshes, with safety factor 1.25 and an observed order capped at the scheme's formal order
+of 2; where those meshes do not converge monotonically we use three times their spread. B converges monotonically, to within \GciB\,ps on the finest mesh. D's 75\,$\mu$m chamfers span barely one cell
+on the coarse mesh, and its coarse value is the outlier; over the three finest meshes it converges monotonically,
+to \ExtD\,ps. The tight serpentine's 0.15\,mm folds still oscillate across meshes. The comparison tables quote the
+medium mesh throughout, so each medium value carries its own bound: 1.25 times its distance from the extrapolated
+value, or three times the spread where the meshes oscillate (Table~\ref{tab:conv}): $\pm$\BoundMedB\,ps for B,
+$\pm$\BoundMedC\,ps for C and $\pm$\BoundMedD\,ps for D, whose medium value runs high by about that much. A
+variant solved on the medium mesh only carries the bound of the converged variant whose smallest features it
+shares: C's for C far, F and the EM-sized C and F; D's for the EM-sized D; B's for E and the other bend radii.
+Because a wide bound can hide a
+trend or invent one, we also judge every conclusion mesh by mesh: Table~\ref{tab:etalevels} gives $\eta$ on
+each mesh, each against its untuned reference on the same mesh.
+
+\begin{table}[t]
+\centering
+\caption{Numerical checks (medium mesh). Truncation is how far every port voltage had fallen, relative to its
+peak, over the last 5\,\% of the record.}
+\label{tab:checks}
+\scriptsize
+\adjustbox{max width=\columnwidth}{\input{generated/table_checks.tex}}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Mesh convergence of the skew (50\,ps edge).}
+\label{tab:conv}
+\scriptsize
+\adjustbox{max width=\columnwidth}{\input{generated/table_convergence.tex}}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Delay efficiency $\eta$ (Eq.~\ref{eq:eta}) on each mesh, against the untuned reference on the same
+mesh.}
+\label{tab:etalevels}
+\scriptsize
+\adjustbox{max width=\columnwidth}{\input{generated/table_eta_levels.tex}}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_convergence}
+\caption{Skew against the finest cell size. The bar on each variant's finest point is its GCI bound.}
+\label{fig:conv}
+\end{figure}
+
+\section{Results}
+\label{sec:results}
+
+All values in this section are simulated; Table~\ref{tab:metrics} collects them.
+
+\subsection{The untuned bend}
+
+B shows \SkewB\,ps of skew at 50\,ps edges, against \SkewSingle\,ps from Eq.~\eqref{eq:dt} with the single-line
+$\eeff$. Geometry predicts the bend well. The skew does depend on the edge: \SkewBRdf\,ps at 35\,ps and
+\SkewBRdaa\,ps at 300\,ps (Fig.~\ref{fig:rise}), moving from near the odd-mode prediction (\SkewOdd\,ps) toward
+the even-mode one (\SkewEven\,ps) as the edge slows. The bend radius matters a little where Eq.~\eqref{eq:dl} says
+it should not: \SkewBRsmall\,ps at $R = 0.75$\,mm, \SkewB\,ps at 1.5\,mm and \SkewBRlarge\,ps at 3\,mm
+(Fig.~\ref{fig:radius}). The pair-level excursion E leaves the skew where B has it (\SkewE\,ps) and adds
+\DelayAddE\,ps of pair delay; as designed, it is not an intra-pair fix.
+
+\subsection{Equal length is not equal delay}
+
+Fig.~\ref{fig:skew} is the central result. Every single-trace tuning makes P and N exactly equal in centreline
+length, and every one leaves skew: \SkewF\,ps for the broad trombone F, \SkewC\,ps for the two sparse excursions
+C ($\pm$\UncC{} on each), and \SkewD\,ps for the dense accordion D ($\pm$\UncD; \ExtD\,ps converged). In efficiency terms
+(Eq.~\eqref{eq:eta}), $\eta = \EtaF$, \EtaC{} and \EtaD{}: one, two and four excursions. The transmission-line
+model, given the same lengths, predicts \MtlF, \MtlC{} and \MtlD\,ps. The waveforms (Fig.~\ref{fig:waveforms})
+show the same thing at the receiver: P still leads N, and the common-mode pulse falls from
+\(\VcB\)\,\% of the step for B to \VcF--\VcD\,\%, not to zero.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_skew}
+\caption{Skew at the receiver, 50\,ps edge. Copper: tuned to exactly equal length. Grey: no intra-pair tuning.
+Diamonds: the transmission-line model with the same lengths. Bars: numerical uncertainty.}
+\label{fig:skew}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_scd21}
+\caption{$|\Scd{21}|$ of each variant (copper) against the untuned bend B (grey).}
+\label{fig:scd21}
+\end{figure*}
+
+\subsection{Where the delay goes}
+
+The gap is consistent with two effects that the line model leaves out. The serpentine experiment isolates them: a
+straight pair with 6\,mm added to P in three excursions, once with folds 1.0\,mm apart (5$h$) and once 0.15\,mm
+apart, the clearance rule. The two have the same corners and the same added length. With loose folds
+$\eta = \EtaSloose$ (\EtaMinSloose--\EtaMaxSloose{} across the meshes); with tight folds $\eta = \EtaStight$
+(\EtaMinStight--\EtaMaxStight), \FoldPenMin{} to \FoldPenMax{} points lower on every mesh
+(Fig.~\ref{fig:eta}, Table~\ref{tab:etalevels}). Coupling between the folds is the
+difference between them; the loose serpentine's own shortfall, which the line model also misses, we attribute to its
+twelve corners. In the bend corrections the shortfall per excursion, full wave less the line model, is
+\PerExcMin{} to \PerExcMax\,ps for this trace width, and it does not scale with the length added, so a correction made of more, smaller excursions
+under-delivers more. The dense accordion D has the most corners and the closest folds, and the lowest $\eta$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_eta}
+\caption{Delay efficiency $\eta$ (Eq.~\ref{eq:eta}) of the bend corrections (copper, $N$ excursions) and of the
+6\,mm serpentines (teal) with loose and tight folds.}
+\label{fig:eta}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_eye}
+\caption{16\,Gb/s PRBS7 eyes (35\,ps edges) and the common-mode voltage at the receiver.}
+\label{fig:eye}
+\end{figure*}
+
+\subsection{Stripline}
+
+Everything above is microstrip, where the odd and even modes travel at different velocities. To see whether that
+matters, we solved B, C, D, F and the serpentine set again in stripline: the same copper midway between two
+planes 0.7\,mm apart, with the ports to the lower plane. Stripline is homogeneous, so its nominal velocity is
+$c/\sqrt{\varepsilon_r}$ (\PsPerMmSl\,ps/mm) and Eq.~\eqref{eq:eta} uses that. Geometry predicts the bend to
+\BendErrPctSl\,\% (\SkewBsl\,ps against \SkewGeoSl\,ps). The length-matched tunings remove \RemovedPctFsl,
+\RemovedPctCsl{} and \RemovedPctDsl\,\% of it for F, C and D, against \RemovedPctF, \RemovedPctC{} and
+\RemovedPctD\,\% in microstrip, and the serpentines give $\eta = \EtaSloosesl$ and \EtaStightsl, a fold
+penalty of \FoldPenaltySl{} points against \FoldPenalty{} in microstrip (Fig.~\ref{fig:stripline}). We had
+expected less: in a homogeneous medium the far-end coupling between parallel lines vanishes. But the folds of a
+meander carry current in opposite directions, so what couples them acts backward along the route, and that
+coupling is present in both media. These stripline runs are on the medium mesh only.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_stripline}
+\caption{Delay efficiency of the same copper in microstrip and in stripline, each against its own nominal
+velocity.}
+\label{fig:stripline}
+\end{figure}
+
+\subsection{Placement}
+
+C far is the same tuning as C, next to the launch instead of the bend. Its arrival skew is close
+(\SkewCfar{} against \SkewC\,ps), but its mode conversion is not. Between the tuning and the bend the pair
+carries a skew in the other direction, and the two conversions drift apart in phase with frequency: the
+frequency-resolved skew of C far climbs from \FdCfarGf\,ps at 5\,GHz to \FdCfarGcf\,ps at 25\,GHz, while C stays
+near \FdCGf\,ps (Fig.~\ref{fig:fdskew}). Its peak $|\Scd{21}|$ to 20\,GHz is \ScdMaxCfar\,dB against
+\ScdMaxC\,dB for C. Compensation belongs next to the mismatch.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_fd_skew}
+\caption{Frequency-resolved skew from Eq.~\eqref{eq:fdskew}. Compensation far from the bend (C far) holds at low
+frequency and fails as frequency rises.}
+\label{fig:fdskew}
+\end{figure}
+
+\subsection{Reflection, impedance and mode conversion}
+
+Where a trace leaves its partner, the differential impedance rises. The broad trombone F, whose P moves \AmpF\,mm further from N for 3\,mm, lifts $Z_\mathrm{diff}$ to \ZmaxF\,$\Omega$ against \ZmaxB\,$\Omega$ for the untuned bend
+(Fig.~\ref{fig:tdr}), and has the worst return loss of the set (\SddMaxF\,dB against \SddMaxB\,dB,
+Fig.~\ref{fig:sdd}). So the variant with the least residual skew pays for it in reflection. The dense accordion
+barely moves $Z_\mathrm{diff}$. Mode conversion follows the residual skew (Fig.~\ref{fig:scd21}); E's is on top
+of B's.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_tdr}
+\caption{Differential TDR (35\,ps edge). F's uncoupled stretch shows as the peak near 120\,ps.}
+\label{fig:tdr}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_sdd}
+\caption{Differential return and insertion loss of the straight reference A, the trombone F and the dense
+accordion D.}
+\label{fig:sdd}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_rise}
+\caption{Skew and peak common-mode voltage against the edge rate.}
+\label{fig:rise}
+\end{figure}
+
+\subsection{What the skew does to a signal}
+
+At 16\,Gb/s with 35\,ps edges, the untuned bend closes the differential eye from \EyeHA\,\% to \EyeHB\,\% of the
+swing and leaves its width at \EyeWB\,UI (Fig.~\ref{fig:eye}). The larger effect is common mode: \EyeVcB\,\% of
+the swing peak to peak at the receiver, against \EyeVcF\,\% for F. For a receiver with good common-mode rejection
+the skew of a single bend is a common-mode problem more than a timing one. Whether that common mode radiates
+depends on the structure beyond the pair, which this study does not model.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_radius}
+\caption{Skew of the untuned bend against its radius.}
+\label{fig:radius}
+\end{figure}
+
+\section{Optimization}
+\label{sec:optimization}
+
+\textbf{EM-informed sizing.} If each excursion loses a fixed amount of delay to its corners and folds, more
+amplitude on the same excursions should recover it. We lengthened C, D and F by their own medium-mesh residual,
+converted to length at the bend's rate ($\Delta L_\mathrm{add} = \pi s\,(1 + t_\mathrm{skew}/t_\mathrm{skew,B})$),
+so that by CAD measure P is now longer than N, by \AddedCcal, \AddedDcal{} and \AddedFcal\,mm in total added.
+By length alone these variants now overshoot: the line model, which sees only lengths, predicts \MtlFcal,
+\MtlCcal{} and \MtlDcal\,ps. Full wave gives \SkewFcal\,ps for F and \SkewCcal\,ps for C, within or close to
+their numerical bound, but \SkewDcal\,ps for D. The fixed-shortfall model is the reason: the extra millimetres delivered
+\MargPctF\,\% of their expected delay in F and \MargPctC\,\% in C, but only \MargPctD\,\% in D, whose
+lengthened verticals couple more strongly to one another. A broad or sparse tuning is calibrated by one field
+solution or one set of coupons per stackup, and a tuner could carry the per-excursion correction; a dense
+accordion needs iteration, which is one more reason to avoid it.
+
+\textbf{Pareto comparison.} Over the bent candidates we minimise four objectives, each defined above: $|t_\mathrm{skew}|$
+(50\,ps edge), RMS $|\Scd{21}|$, worst $|\Sdd{11}|$, and tuning area. No weighted score is used. The
+non-dominated set is \{\ParetoAll\}. Fig.~\ref{fig:pareto} shows two projections: against area, the dense
+accordion is cheap and weak; against return loss, the trombone trades reflection for skew.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_pareto}
+\caption{Two projections of the four-objective comparison. Copper points are non-dominated in that projection;
+the dashed line joins them.}
+\label{fig:pareto}
+\end{figure*}
+
+\section{Physical validation plan}
+\label{sec:validation}
+
+Not executed. A coupon panel with one coupon per variant (A--F, the EM-sized variants and the serpentines), each
+in three copies, on one laminate and stackup, with identical launches: edge-mount connectors or GSSG probe pads
+with ground vias, and a 2x-thru of the launch alone on the same panel for fixture de-embedding as in IEEE
+Std~370~\cite{ieee370}. Measure four-port S-parameters to 30\,GHz on a calibrated VNA, de-embed to the launch
+plane, and microsection one coupon per panel to measure $w$, $s$, $h$ and the copper. Extract $\eeff$ of the odd
+and even modes from coupon A and rerun the EM with the measured dimensions before comparing. The comparison is
+skew, $\eta$ (Eq.~\ref{eq:eta}, against B on the same panel), $|\Sdd{11}|$, $|\Scd{21}|$ and TDR, with error bars
+from the spread of the three copies, the VNA's stated uncertainty and the GCI here. The predictions to test are
+that equal-length tuning leaves \SkewF{} to \SkewD\,ps at this pitch, that the shortfall grows with the excursion
+count, and that the same holds on a stripline panel.
+Near- or far-field scanning would be needed only if emission is the claim, which it is not here.
+
+\section{Recommendations}
+\label{sec:recommendations}
+
+For edge-coupled pairs at this pitch and coupling, in microstrip and in stripline, and with the caveat that the
+numbers are simulated:
+\begin{itemize}\itemsep 1pt
+\item Expect geometry to predict a bend's skew well (here within \BendErrPct\,\%), and expect it to over-predict what a
+length-matched tuning removes. Budget a residual, or size the tuning from a field solution or a coupon.
+\item Prefer few excursions. Each one costs delay in its corners regardless of its amplitude; a single excursion
+removed \RemovedPctF\,\% of the skew, four removed \RemovedPctD\,\%.
+\item Keep folds apart. Here folds at the clearance rule lost \FoldPenMin--\FoldPenMax{} points of efficiency
+against folds
+5$h$ apart.
+\item Tune next to the mismatch. The same correction at the launch matches arrival time but not phase at high
+frequency.
+\item Watch the impedance of a broad excursion: the uncoupled stretch lifts $Z_\mathrm{diff}$, here to
+\ZmaxF\,$\Omega$. Keep its amplitude small relative to the pitch or keep it short.
+\item A pair-level excursion does not fix intra-pair skew.
+\item None of this is special to microstrip. In stripline the bend's skew matched geometry to \BendErrPctSl\,\%,
+the length-matched tunings removed a similar share, and tight folds cost \FoldPenaltySl{} points. The edge rate and the interface decide whether a few
+picoseconds matter; at 16\,Gb/s here they matter more as common mode than as eye closure.
+\end{itemize}
+
+\section{Reproducibility}
+\label{sec:repro}
+
+The repository holds \texttt{parameters.yaml}; \texttt{scripts/} with the geometry generator (and its KiCad
+export and DRC), the openEMS model writer, the run orchestrator with provenance, the S-parameter extraction, the
+line model, the analysis, the convergence study and the figure and table generators; and \texttt{figures/}. Every
+number in this report is a macro generated from \texttt{build/results/results.json}. Runs were made on one Linux
+host, \RunCount{} runs in all, \RunHours\,h of wall time in total on single-threaded solver processes. The
+\texttt{README.md} lists the commands; regenerating every figure and table from the stored S-parameters takes a
+few minutes.
+
+\section{Limitations}
+\label{sec:limitations}
+
+One width and one pitch, in one microstrip and one stripline stackup. The stripline ports run to the lower
+plane only, and its plane spacing came from a closed-form estimate; its $Z_\mathrm{diff}$ is about
+\ZmaxBsl\,$\Omega$ by TDR, so its absolute return loss is worse than microstrip's, which does not affect the
+skew comparisons. The return plane is a perfect conductor and the copper a
+conducting sheet, so conductor loss is approximate and roughness is absent. The dielectric loss model has
+$\tan\delta \propto 1/f$. Lumped ports at the launch are not a connector or a probe; their reflection is common to
+every variant and cancels in the comparisons, but not in absolute return loss. The staircased mesh resolves the
+smallest features (the 75\,$\mu$m chamfers) with two to three cells at the medium level; the convergence study
+bounds the effect for B, C, D and the serpentines only, and the stripline set was solved on one mesh. Edges faster than 35\,ps and frequencies above 30\,GHz are outside the
+simulated band. Common-mode voltage and $\Scd{21}$ are not emissions. Nothing was measured.
+
+\section{Conclusions}
+
+At a 20\,mil pitch a U-bend's skew is what geometry says, about 9\,ps here. Matching the lengths does not remove
+it: a length-matched serpentine removed between \RemovedPctD{} and \RemovedPctF\,\% of the skew in full-wave
+simulation, and the
+remainder grew with the number of excursions and the closeness of the folds. A line model with the same lengths
+missed nearly all of it, and the same copper in stripline behaved the same way. One field-solver iteration sized
+the broad and sparse tunings to within \SkewFcal{} and \SkewCcal\,ps; the dense accordion needed more. The fix is not more length matching; it is to size the tuning by its electrical effect,
+keep it next to the mismatch, and use few, well-separated excursions.
+
+\small
+\raggedright
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

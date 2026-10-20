@@ -1,0 +1,96 @@
+# Every value here is PROPOSED for this study. None is calibrated to a
+# laminate, a fabricator or an interface specification.
+# Lengths are in millimetres, frequencies in hertz, times in seconds.
+
+stackup:
+  kind: microstrip            # one signal layer over one return plane
+  dielectric_height: 0.200    # h, signal copper to return plane
+  epsilon_r: 4.3
+  loss_tangent: 0.02          # openEMS models it as a fixed conductivity,
+  loss_tangent_at: 5.0e+9      # so tan(delta) is 0.02 here and falls as 1/f
+  copper_thickness: 0.035     # conducting-sheet model: thickness sets loss only
+  copper_conductivity: 5.8e+7  # S/m
+  return_plane: perfect electric conductor at z = 0 (the domain's floor)
+
+pair:
+  width: 0.250                # w
+  pitch: 0.508                # s, centre to centre: 20 mil, from the prompt
+  min_clearance: 0.150        # DRC rule applied to P-N copper
+
+fixture:
+  leg_length: 12.0            # each straight leg, launch plane to bend start
+  bend_radius: 1.5            # R, centreline radius of the inner trace (P)
+  port_impedance: 50.0        # each single-ended lumped port
+
+# Single-conductor tuning, inserted on the inner trace (P) of the leg that
+# leads into the bend. The amplitude A is solved so that P's centreline is
+# exactly as long as N's after the chamfers are cut; A_nominal = pi*s/(2N)
+# is what the rule dL = 2NA gives.
+tuning:
+  chamfer: 0.075              # 45-degree corner cut, each corner
+  gap_to_bend: 0.5            # D for the "near" placement: section end to bend start
+  far_start: 1.0              # section start for the "far" placement, from the launch
+  families:
+    C: {label: sparse, excursions: 2, top: 0.80, bottom: 2.00}
+    D: {label: dense accordion, excursions: 4, top: 0.45, bottom: 0.45}
+    F: {label: broad trombone, excursions: 1, top: 3.00, bottom: 0.0}
+
+# EM-informed tuning (the optimisation step): the same excursions, with the
+# added length raised by the medium-mesh residual of the length-matched
+# version converted back to length at the bend's own rate (B's skew per mm
+# of mismatch), on the model that each excursion's shortfall is fixed by its
+# corners and so does not grow with amplitude. Values computed by
+# scripts/calibrate.py from build/results/summary_medium.json (50 ps edge).
+calibrated_added_length:
+  C: 2.2132
+  D: 2.4835
+  F: 1.9905
+
+# The pair-level control: both traces move together along a raised-cosine
+# excursion, offset at constant pitch. Its net turning angle is zero, so it
+# adds delay to both traces and leaves their difference unchanged.
+excursion:
+  E: {amplitude: 1.0, length: 4.0, gap_to_bend: 0.5}
+
+# Fold self-coupling (eta) experiment: the straight pair with a large
+# serpentine on P, so that the added delay is big enough to measure eta.
+serpentine:
+  added_length: 6.0
+  excursions: 3
+  loose: {top: 1.25, bottom: 1.25}   # fold edge spacing 1.00 mm (5 h)
+  tight: {top: 0.40, bottom: 0.40}   # fold edge spacing 0.15 mm (the clearance rule)
+
+# Bend-radius sweep of the untuned U-bend (B has R = 1.5 mm).
+bend_radius_sweep: [0.75, 3.0]
+
+# The stripline check: the same copper (every _sl variant is its microstrip
+# namesake's geometry) between two return planes, trace midway. Plane
+# spacing chosen for roughly 100 ohm differential at this width and pitch
+# (closed-form estimate, not calibrated). The ports run from the trace to
+# the lower plane only.
+stripline:
+  plane_spacing: 0.70
+
+simulation:
+  f_max: 30.0e+9               # Gaussian excitation, f0 = fc = f_max / 2
+  end_criteria: 1.0e-5        # used only by the dry run; see record_time
+  max_timesteps: 400000
+  # The pulse's DC content leaves a static field whose energy settles near
+  # -38 dB, so no run reaches an energy criterion. Every run is stopped at a
+  # fixed simulated time instead; at 2 ns the low-frequency S-parameters are
+  # within about 1e-3 of a 7 ns record (checked on fixture B, coarse mesh).
+  record_time: 2.0e-9
+  margin_xy: 2.0              # substrate and air beyond the copper, each side
+  air_above: 2.5              # air above the signal copper
+  levels:                     # finest cell (mm) in the copper regions
+    coarse: 0.060
+    medium: 0.040
+    fine: 0.027
+    xfine: 0.018              # D only: its 75 um chamfers need a fourth level
+  coarse_cell: 0.15           # largest cell in x and y away from copper
+  air_cell: 0.30              # largest cell in z in the air
+
+analysis:
+  rise_times: [35.0e-12, 50.0e-12, 100.0e-12, 200.0e-12, 300.0e-12]  # 10-90 %
+  bit_rate: 10.0e+9            # illustrative eye only; no interface is assumed
+  bands: [[0.1e+9, 10.0e+9], [0.1e+9, 20.0e+9]]

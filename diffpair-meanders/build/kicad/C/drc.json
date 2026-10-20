@@ -1,0 +1,112 @@
+{
+    "$schema": "https://schemas.kicad.org/drc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-10-18T19:56:46",
+    "ignored_checks": [
+        {
+            "description": "Footprint has no courtyard defined",
+            "key": "missing_courtyard"
+        },
+        {
+            "description": "Track endpoint not centered on via",
+            "key": "track_not_centered_on_via"
+        },
+        {
+            "description": "Tuning profile track geometries",
+            "key": "tuning_profile_track_geometries"
+        },
+        {
+            "description": "Footprint doesn't match symbol's footprint filters",
+            "key": "footprint_filters_mismatch"
+        },
+        {
+            "description": "Footprint component type doesn't match footprint pads",
+            "key": "footprint_type_mismatch"
+        }
+    ],
+    "included_severities": [
+        "error",
+        "warning"
+    ],
+    "kicad_version": "10.0.6",
+    "schematic_parity": [],
+    "source": "C.kicad_pcb",
+    "unconnected_items": [],
+    "violations": [
+        {
+            "description": "Track has unconnected end",
+            "items": [
+                {
+                    "description": "Track [P] on F.Cu, length 7.7500 mm",
+                    "pos": {
+                        "x": 0.0,
+                        "y": 1.5
+                    },
+                    "uuid": "63d7275d-6b01-46ef-b912-d5434722436b"
+                }
+            ],
+            "severity": "warning",
+            "type": "track_dangling"
+        },
+        {
+            "description": "Track has unconnected end",
+            "items": [
+                {
+                    "description": "Track [P] on F.Cu, length 12.0000 mm",
+                    "pos": {
+                        "x": 12.0,
+                        "y": -1.5
+                    },
+                    "uuid": "7c852dc2-aed4-44a7-94e5-e69c55da1bdd"
+                }
+            ],
+            "severity": "warning",
+            "type": "track_dangling"
+        },
+        {
+            "description": "Track has unconnected end",
+            "items": [
+                {
+                    "description": "Track [N] on F.Cu, length 12.0000 mm",
+                    "pos": {
+                        "x": 0.0,
+                        "y": 2.008
+                    },
+                    "uuid": "3c8e4b12-1b65-4929-bdd7-29f6a0dc87a4"
+                }
+            ],
+            "severity": "warning",
+            "type": "track_dangling"
+        },
+        {
+            "description": "Track has unconnected end",
+            "items": [
+                {
+                    "description": "Track [N] on F.Cu, length 12.0000 mm",
+                    "pos": {
+                        "x": 12.0,
+                        "y": -2.008
+                    },
+                    "uuid": "9630a8e4-aa5b-4dad-943b-6a4a6f5298b9"
+                }
+            ],
+            "severity": "warning",
+            "type": "track_dangling"
+        },
+        {
+            "description": "Isolated copper fill",
+            "items": [
+                {
+                    "description": "Zone [GND] on B.Cu, priority 0",
+                    "pos": {
+                        "x": -1.0,
+                        "y": -3.133
+                    },
+                    "uuid": "c1796962-2831-474a-ab8d-12e3c7fedfc5"
+                }
+            ],
+            "severity": "warning",
+            "type": "isolated_copper"
+        }
+    ]
+}

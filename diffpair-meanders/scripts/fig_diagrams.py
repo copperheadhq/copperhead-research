@@ -11,9 +11,15 @@ parameters.yaml, the same sources the runs used; nothing is typed in.
 Each figure is laid out at the width it is printed (a column, 3.45 in, or
 the page, 7.0 in), so its type prints at the size it is set.
 
-The blog keeps its own figures (fig_geometry.py); these are the report's.
+Two targets. `report` (the default) is the paper's: vector PDF at a column
+or a page wide, Latin Modern. `blog` draws the same figures for the post:
+PNG and SVG at the post's width, Inter, the fills a step stronger so they
+hold on a screen, and lines thickened to match; it adds the figures only the
+post uses (the tuning sections side by side, the current's path round a
+corner). A blog figure is laid out in the same inches as its report twin,
+scaled by the width ratio, so the two read alike.
 
-Run: python scripts/fig_diagrams.py
+Run: python scripts/fig_diagrams.py [report|blog]
 """
 
 from __future__ import annotations
@@ -33,6 +39,8 @@ import style as S  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 TARGET = "report"
+SC = 1.0          # inches here relative to the report's layout (set by use())
+LW = 1.0          # line widths relative to the report's (set by use())
 
 # model views
 SUBSTRATE = "#2D6A49"
@@ -46,6 +54,10 @@ INK = "#000000"
 DIELECTRIC = "#E4E4E4"
 P_LIGHT = "#E7C9A6"
 N_LIGHT = "#A9D6DD"
+# the post's fills, a step stronger than the report's so they hold on a screen
+P_SCREEN = "#E0AE74"
+N_SCREEN = "#7FC6D2"
+P_FILL, N_FILL = P_LIGHT, N_LIGHT      # set by use()
 LW_THIN = 0.35
 DASHDOT = (6, 1.6, 1.2, 1.6)
 # drawing constants the captions quote, written to report/generated/diagrams.tex
@@ -55,11 +67,44 @@ MACROS: dict[str, str] = {}
 # ------------------------------------------------------------------ helpers
 
 def use():
-    """The report style, laid out by hand: every axes here is placed in
-    inches, so constrained layout is off."""
+    """The target's style, laid out by hand: every axes here is placed in
+    inches, so constrained layout is off. Symbols are set in Computer Modern
+    for both targets, as a drawing's are."""
+    global SC, LW, P_FILL, N_FILL
     t = S.use(TARGET)
     plt.rcParams["figure.constrained_layout.use"] = False
+    plt.rcParams["mathtext.fontset"] = "cm"
+    SC = t["double"] / S.TARGETS["report"]["double"]
+    LW = 1.0 if TARGET == "report" else 1.7
+    P_FILL, N_FILL = (P_LIGHT, N_LIGHT) if TARGET == "report" else (P_SCREEN, N_SCREEN)
     return t
+
+
+def _thicken(fig, k):
+    """Every line, edge and arrow `k` times heavier: the post's figures are
+    drawn at the report's line weights and scaled here."""
+    if k == 1.0:
+        return
+    for ax in fig.axes:
+        for ln in ax.lines:
+            ln.set_linewidth(ln.get_linewidth() * k)
+        for pa in ax.patches:
+            pa.set_linewidth(pa.get_linewidth() * k)
+            if isinstance(pa, FancyArrowPatch):
+                pa.set_mutation_scale(pa.get_mutation_scale() * k)
+        for co in ax.collections:
+            try:
+                co.set_linewidth([lw * k for lw in co.get_linewidth()])
+            except (TypeError, ValueError):
+                pass
+        for sp in ax.spines.values():
+            sp.set_linewidth(sp.get_linewidth() * k)
+        ax.tick_params(width=0.5 * k)
+
+
+def save(fig, name):
+    _thicken(fig, LW)
+    S.save(fig, name, TARGET)
 
 
 def bare(ax):
@@ -110,7 +155,10 @@ def save_cropped(fig, name, pad=0.03):
                             (h - ys.min()) / dpi + pad)
     out = ROOT / "figures" / TARGET
     out.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out / f"{name}.pdf", bbox_inches=box, metadata={"CreationDate": None})
+    t = S.TARGETS[TARGET]
+    for ext_ in t["ext"]:
+        meta = {"CreationDate": None} if ext_ == "pdf" else ({"Date": None} if ext_ == "svg" else None)
+        fig.savefig(out / f"{name}.{ext_}", dpi=t["dpi"], bbox_inches=box, metadata=meta)
     plt.close(fig)
 
 
@@ -159,17 +207,17 @@ def fig_model():
     X, Y = grid["x"], grid["y"]
     g = geometry.build("B", p)
     win = (8.15, 9.35, -2.25, -1.05)
-    W, Hh = t["double"], 2.75
+    W, Hh = t["double"], 2.75 * SC
     fig = plt.figure(figsize=(W, Hh))
     # both panels the same height on the page
-    ph = 2.05
+    ph = 2.05 * SC
     xa = (X[0] - 0.3, X[-1] + 0.3)
     ya = (Y[0] - 0.3, Y[-1] + 0.3)
     wa = ph * (xa[1] - xa[0]) / (ya[1] - ya[0])
     wb_ = ph * (win[1] - win[0]) / (win[3] - win[2])
-    left, bottom = 0.42, 0.52
+    left, bottom = 0.42 * SC, 0.52 * SC
     ax = fig.add_axes([left / W, bottom / Hh, wa / W, ph / Hh])
-    ax2 = fig.add_axes([(W - wb_ - 0.08) / W, bottom / Hh, wb_ / W, ph / Hh])
+    ax2 = fig.add_axes([(W - wb_ - 0.08 * SC) / W, bottom / Hh, wb_ / W, ph / Hh])
 
     # (a) the domain and fixture B
     ax.add_patch(Rectangle((X[0], Y[0]), X[-1] - X[0], Y[-1] - Y[0], fc=SUBSTRATE, ec=SUBSTRATE_EDGE, lw=0.6,
@@ -220,7 +268,7 @@ def fig_model():
     for a_, lab in ((ax, "(a)"), (ax2, "(b)")):
         pos = a_.get_position()
         fig.text(pos.x0 + pos.width / 2, 0.03, lab, ha="center", va="bottom", fontsize=b)
-    S.save(fig, "fig_model", TARGET)
+    save(fig, "fig_model")
 
 
 def fig_model3d():
@@ -238,7 +286,7 @@ def fig_model3d():
     ZE = 4.0
     MACROS["ModelZE"] = f"{ZE:g}"
     H, TOP = h * ZE, (h + air) * ZE
-    fig = plt.figure(figsize=(3.75, 3.3), dpi=200)
+    fig = plt.figure(figsize=(3.75 * SC, 3.3 * SC), dpi=200)
     ax = fig.add_axes([0, 0, 1, 1], projection="3d", computed_zorder=False)
     x0, x1, y0, y1 = X[0], X[-1], Y[0], Y[-1]
     c = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
@@ -264,19 +312,26 @@ def fig_model3d():
         ax.quiver(x0, y0, 0, dx, dy, dz, color=INK, lw=0.6, arrow_length_ratio=0.3, zorder=9)
         ax.text(x0 + dx * 1.25, y0 + dy * 1.25, dz * 1.25, f"${lab}$", fontsize=b - 1, ha="center", va="center",
                 zorder=10)
-    ax.text((x0 + x1) / 2, (y0 + y1) / 2, TOP, "Mur boundaries", fontsize=b - 1.5, ha="center", va="center",
-            zorder=10)
-    ax.text(x1, y0, -0.15 * TOP, "PEC floor", fontsize=b - 1.5, ha="left", va="top", zorder=10)
+    post = TARGET == "blog"
+    ax.text((x0 + x1) / 2, (y0 + y1) / 2, TOP, "Mur boundaries: the fields leave here" if post else "Mur boundaries",
+            fontsize=b - 1.5, ha="center", va="center", zorder=10)
+    if post:
+        ax.text(x1 - 4.5, y0, -0.15 * TOP, "PEC floor: the return plane", fontsize=b - 1.5, ha="center", va="top",
+                zorder=10)
+    else:
+        ax.text(x1, y0, -0.15 * TOP, "PEC floor", fontsize=b - 1.5, ha="left", va="top", zorder=10)
     # the port label sits in the empty air in front, with a leader to the near ports
     lx, lz = 6.5, H + 0.5 * TOP
     ax.plot([lx - 0.15, 0.0], [y0, -1.75], [lz - 0.02 * TOP, H * 1.1], color=PORT, lw=0.5, zorder=9)
-    ax.text(lx, y0, lz, "lumped ports", fontsize=b - 1.5, ha="left", va="center", color=PORT, zorder=10)
+    ax.text(lx, y0, lz, "lumped ports, 50 Ω" if post else "lumped ports", fontsize=b - 1.5, ha="left", va="center",
+            color=PORT, zorder=10)
     ax.set_xlim(x0, x1)
     ax.set_ylim(y0, y1)
     ax.set_zlim(0, TOP)
     ax.set_box_aspect((x1 - x0, y1 - y0, TOP), zoom=1.0)
     ax.view_init(elev=24, azim=-58)
     ax.set_axis_off()
+    _thicken(fig, LW)
     save_cropped(fig, "fig_model3d")
 
 
@@ -305,16 +360,17 @@ def fig_xsec():
     yb = (-0.07, bs + 0.07)
     W = t["single"]
     scale = W / (xr - xl)
-    cap = 0.24                                       # inches for each panel's label
+    cap = 0.24 * SC                                  # inches for each panel's label
     ha_, hb_ = (ya[1] - ya[0]) * scale, (yb[1] - yb[0]) * scale
-    Hh = ha_ + hb_ + 2 * cap + 0.08
+    Hh = ha_ + hb_ + 2 * cap + 0.08 * SC
     fig = plt.figure(figsize=(W, Hh))
-    a1 = fig.add_axes([0, (hb_ + 2 * cap + 0.08) / Hh, 1, ha_ / Hh])
+    a1 = fig.add_axes([0, (hb_ + 2 * cap + 0.08 * SC) / Hh, 1, ha_ / Hh])
     a2 = fig.add_axes([0, cap / Hh, 1, hb_ / Hh])
     hat = 0.045
 
     def traces(ax, y0):
-        for x, fc, lab in ((-s / 2, S.COPPER, "P"), (s / 2, S.TEAL, "N")):
+        fills = (S.COPPER, S.TEAL) if TARGET == "report" else (P_FILL, N_FILL)
+        for x, fc, lab in ((-s / 2, fills[0], "P"), (s / 2, fills[1], "N")):
             ax.add_patch(Rectangle((x - w / 2, y0), w, tc, fc=fc, ec=INK, lw=0.4, zorder=5))
             ax.plot([x, x], [y0 + tc + 0.015, y0 + tc + 0.06], color=INK, lw=0.3, zorder=6)
             ax.text(x, y0 - 0.025, lab, ha="center", va="top", fontsize=b - 0.5, style="italic", zorder=6)
@@ -366,9 +422,9 @@ def fig_xsec():
     a2.set_xlim(xl, xr)
     a2.set_ylim(*yb)
     bare(a2)
-    fig.text(0.5, (hb_ + cap + 0.08 + 0.04) / Hh, "(a) Microstrip", ha="center", va="bottom", fontsize=b)
-    fig.text(0.5, 0.04 / Hh, "(b) Stripline", ha="center", va="bottom", fontsize=b)
-    S.save(fig, "fig_xsec", TARGET)
+    fig.text(0.5, (hb_ + cap + 0.12 * SC) / Hh, "(a) Microstrip", ha="center", va="bottom", fontsize=b)
+    fig.text(0.5, 0.04 * SC / Hh, "(b) Stripline", ha="center", va="bottom", fontsize=b)
+    save(fig, "fig_xsec")
 
 
 def fig_bend():
@@ -379,7 +435,7 @@ def fig_bend():
     R, s, L = p["fixture"]["bend_radius"], p["pair"]["pitch"], p["fixture"]["leg_length"]
     g = geometry.build("B", p)
     fig, ax, _ = drawing(t["single"], (L - 3.0, L + R + s + 1.9), (-(R + s) - 0.45, R + s + 0.45))
-    for net, fc in (("P", P_LIGHT), ("N", N_LIGHT)):
+    for net, fc in (("P", P_FILL), ("N", N_FILL)):
         ax.add_patch(Polygon(g["copper"][net], closed=True, fc=fc, ec=INK, lw=0.45, zorder=2))
         centreline(ax, g["centreline"][net])
     cx = L
@@ -415,7 +471,7 @@ def fig_bend():
             ha="left", va="bottom", zorder=9)
     ax.text(L - 2.95, R + s + 0.2, "N", fontsize=b - 0.5, style="italic", ha="left", va="bottom")
     ax.text(L - 2.95, R - 0.2, "P", fontsize=b - 0.5, style="italic", ha="left", va="top")
-    S.save(fig, "fig_bend", TARGET)
+    save(fig, "fig_bend")
 
 
 def fig_excursion():
@@ -439,11 +495,12 @@ def fig_excursion():
     ytop = yP + A
     yd = ytop + w / 2 + 0.3              # the chain dimension
     yrow = yN - w / 2 - 0.3              # tuning section and D
-    band = 1.05                          # mm of height for detail X
+    detail = TARGET == "report"          # the post draws the corner in a figure of its own
+    band = 1.05 if detail else 0.0       # mm of height for detail X
     xlim = (x_start - 1.45, L + 0.55)
     ylim = (yrow - 0.3 - band, yd + 0.24)
     fig, ax, scale = drawing(t["single"], xlim, ylim)
-    for net, fc in (("P", P_LIGHT), ("N", N_LIGHT)):
+    for net, fc in (("P", P_FILL), ("N", N_FILL)):
         ax.add_patch(Polygon(g["copper"][net], closed=True, fc=fc, ec=INK, lw=0.45, zorder=2))
         centreline(ax, g["centreline"][net], lw=0.35)
     for xa, xb, lab in ((x1, x2, r"$a$"), (x2, x3, r"$b$"), (x3, x4, r"$a$")):
@@ -476,6 +533,9 @@ def fig_excursion():
     ax.text(L + 0.06, yN + 0.17, "bend", ha="left", va="bottom", fontsize=b - 1.5, style="italic")
     ax.text(xlim[0] + 0.05, yP + w / 2 + 0.04, "P", ha="left", va="bottom", fontsize=b - 0.5, style="italic")
     ax.text(xlim[0] + 0.05, yN - w / 2 - 0.04, "N", ha="left", va="top", fontsize=b - 0.5, style="italic")
+    if not detail:
+        save(fig, "fig_excursion")
+        return
     # detail X: the first excursion's upper-left corner, in the band below
     cxy = (x1, ytop)
     ax.add_patch(Circle(cxy, 0.17, fc="none", ec=INK, lw=0.4, zorder=8))
@@ -490,7 +550,7 @@ def fig_excursion():
     mag = (bx1 - bx0) / (2 * half_w)
     MACROS["DetailScale"] = f"{mag:.0f}"
     half_h = (by1 - by0) / mag / 2
-    ins.add_patch(Polygon(g["copper"]["P"], closed=True, fc=P_LIGHT, ec=INK, lw=0.6, zorder=2))
+    ins.add_patch(Polygon(g["copper"]["P"], closed=True, fc=P_FILL, ec=INK, lw=0.6, zorder=2))
     centreline(ins, g["centreline"]["P"], lw=0.45)
     cx0, cy0 = cxy[0] + 0.0, cxy[1] - 0.03
     ins.set_xlim(cx0 - half_w, cx0 + half_w)
@@ -516,7 +576,7 @@ def fig_excursion():
     ax.text(bx1 + 0.12, (by0 + by1) / 2,
             f"Detail X ({mag:.0f}:1): the 45-degree\nchamfer cut at every corner.\nLengths are measured on\nthe centrelines.",
             fontsize=b - 1.5, ha="left", va="center", linespacing=1.2)
-    S.save(fig, "fig_excursion", TARGET)
+    save(fig, "fig_excursion")
 
 
 def fig_variants():
@@ -537,7 +597,7 @@ def fig_variants():
     uy0 = min(y for g in bent for net in "PN" for _, y in g["copper"][net]) - pad
     uy1 = max(y for g in bent for net in "PN" for _, y in g["copper"][net]) + pad
     W = t["double"]
-    gapx, lab, gapy = 0.12, 0.34, 0.06
+    gapx, lab, gapy = 0.12 * SC, 0.34 * SC, 0.06 * SC
     tile_w = (W - 2 * gapx) / 3
     scale = tile_w / (ux1 + pad)
     a = builds["A"]
@@ -546,7 +606,7 @@ def fig_variants():
     ay1 = max(y for net in "PN" for _, y in a["copper"][net]) + pad
     h_a = (ay1 - ay0) * scale
     h_u = (uy1 - uy0) * scale
-    lab_a = 0.2
+    lab_a = 0.2 * SC
     Hh = 2 * (h_u + lab + gapy) + h_a + lab_a
     fig = plt.figure(figsize=(W, Hh))
     letters = iter("abcdefg")
@@ -587,7 +647,7 @@ def fig_variants():
                     ax.text(0.45, q["y"] + (0.4 if q["net"] == "P" else -0.42), q["net"], color=ON_SUBSTRATE,
                             fontsize=b - 2, style="italic", ha="left", va="center", zorder=6)
         y_cursor -= (lab_a if is_a else lab) + gapy
-    S.save(fig, "fig_variants", TARGET)
+    save(fig, "fig_variants")
 
 
 def fig_flow():
@@ -609,12 +669,12 @@ def fig_flow():
                              ("Convergence", "convergence.py", "error bounds")]),
     ]
     W = t["double"]
-    wb, hb, gap, ggap, gpad = 0.7, 0.5, 0.13, 0.26, 0.07
+    wb, hb, gap, ggap, gpad = (v * SC for v in (0.7, 0.5, 0.13, 0.26, 0.07))
     n = sum(len(items) for _, items in groups)
     used = n * wb + (n - len(groups)) * gap + (len(groups) - 1) * ggap + 2 * gpad
     x = (W - used) / 2 + gpad
-    y_top, head = 0.78, 0.2
-    Hh = y_top + hb + head + 0.08
+    y_top, head = 0.78 * SC, 0.2 * SC
+    Hh = y_top + hb + head + 0.08 * SC
     fig = plt.figure(figsize=(W, Hh))
     ax = fig.add_axes([0, 0, 1, 1])
     ax.set_xlim(0, W)
@@ -654,16 +714,148 @@ def fig_flow():
     # the line model, under the post-processing that it feeds
     xs, _ = boxes["scikit-rf"]
     xm = xs + (wb + gap) / 2
-    box(xm, 0.1, "Line model", "mtl.py", "modes from A")
-    group(xm - gpad, xm + wb + gpad, 0.1 - gpad, 0.1 + hb + gpad, "Stage II", at="left")
+    yl = 0.1 * SC
+    box(xm, yl, "Line model", "mtl.py", "modes from A")
+    group(xm - gpad, xm + wb + gpad, yl - gpad, yl + hb + gpad, "Stage II", at="left")
     xa_, ya_ = boxes["scikit-rf"]
-    arrow(ax, (xa_ + wb * 0.3, ya_ - gpad), (xm + wb * 0.1, 0.1 + hb + gpad), both=False, lw=0.5, size=5)
+    arrow(ax, (xa_ + wb * 0.3, ya_ - gpad), (xm + wb * 0.1, yl + hb + gpad), both=False, lw=0.5, size=5)
     xb_, yb_ = boxes["analysis.py"]
-    arrow(ax, (xm + wb * 0.9, 0.1 + hb + gpad), (xb_ + wb * 0.7, yb_ - gpad), both=False, lw=0.5, size=5)
-    S.save(fig, "fig_flow", TARGET)
+    arrow(ax, (xm + wb * 0.9, yl + hb + gpad), (xb_ + wb * 0.7, yb_ - gpad), both=False, lw=0.5, size=5)
+    save(fig, "fig_flow")
 
 
-def main():
+# ------------------------------------------------------------------ the post's own
+
+def inside_path(pts, d):
+    """The centre line pulled toward the inside of each turn by d (mm): the
+    way the current cuts each corner."""
+    out = [pts[0]]
+    for a, b, c in zip(pts, pts[1:], pts[2:]):
+        ux, uy = b[0] - a[0], b[1] - a[1]
+        vx, vy = c[0] - b[0], c[1] - b[1]
+        la, lb = math.hypot(ux, uy), math.hypot(vx, vy)
+        if la < 1e-9 or lb < 1e-9:
+            out.append(b)
+            continue
+        cross = ux * vy - uy * vx
+        if abs(cross) < 1e-9:
+            out.append(b)
+            continue
+        sign = 1 if cross > 0 else -1          # +1: a left turn, the inside is to the left
+        n1 = (-uy / la * sign, ux / la * sign)
+        n2 = (-vy / lb * sign, vx / lb * sign)
+        bx, by = n1[0] + n2[0], n1[1] + n2[1]
+        lbis = math.hypot(bx, by)
+        out.append((b[0] + bx / lbis * d, b[1] + by / lbis * d))
+    out.append(pts[-1])
+    return out
+
+
+def fig_corner():
+    """One excursion of C's P trace with its centre line and the path the
+    current takes, and one corner at a larger scale with its chamfer leg
+    dimensioned."""
+    from matplotlib.lines import Line2D
+    t = use()
+    b = t["base"]
+    p = geometry.params()
+    R, w = p["fixture"]["bend_radius"], p["pair"]["width"]
+    c = p["tuning"]["chamfer"]
+    g = geometry.build("C", p)
+    tu = g["tuning"]
+    xs0, a, top = tu["section_start"], tu["amplitude"], tu["top"]
+    x1 = xs0 + c
+    ytop = -R + a
+    xr = (xs0 - 0.45, xs0 + top + 2 * c + 0.45)
+    yr = (-R - 0.2, ytop + 0.22)
+    centre = [tuple(q) for q in g["centreline"]["P"] if xr[0] - 1 <= q[0] <= xr[1] + 1 and -R - 0.01 <= q[1] <= ytop + 0.01]
+    path = inside_path(centre, 0.62 * w / 2)
+    W = t["double"]
+    gap, key = 0.3 * SC, 0.26 * SC
+    wl = 0.64 * (W - gap)
+    hl = wl * (yr[1] - yr[0]) / (xr[1] - xr[0])
+    Hh = hl + key + 0.08 * SC
+    fig = plt.figure(figsize=(W, Hh))
+    ax = fig.add_axes([0, 0, wl / W, hl / Hh])
+    ax.add_patch(Polygon(g["copper"]["P"], closed=True, fc=P_FILL, ec=INK, lw=0.5, zorder=2))
+    ax.plot(*zip(*centre), color=INK, lw=0.9, dashes=(4, 2.5), zorder=5)
+    ax.plot(*zip(*path), color=S.COPPER, lw=1.6, zorder=6)
+    ax.set_xlim(*xr)
+    ax.set_ylim(*yr)
+    bare(ax)
+    fig.legend(handles=[Line2D([], [], color=INK, lw=0.9 * LW, dashes=(4, 2.5)),
+                        Line2D([], [], color=S.COPPER, lw=1.6 * LW)],
+               labels=["Centre line: what the length report measures", "The path the current takes"],
+               loc="upper center", ncol=2, frameon=False, fontsize=b - 1, bbox_to_anchor=(0.5, 1.0),
+               columnspacing=1.6, handlelength=2.2)
+    # the detail: the first excursion's upper-left corner
+    half_w = 0.13
+    wd = W - wl - gap
+    hd = hl
+    ins = fig.add_axes([(wl + gap) / W, 0, wd / W, hd / Hh])
+    half_h = half_w * hd / wd
+    ins.add_patch(Polygon(g["copper"]["P"], closed=True, fc=P_FILL, ec=INK, lw=0.6, zorder=2))
+    centreline(ins, g["centreline"]["P"], lw=0.45)
+    cx0, cy0 = x1, ytop - 0.03
+    ins.set_xlim(cx0 - half_w, cx0 + half_w)
+    ins.set_ylim(cy0 - half_h, cy0 + half_h)
+    ins.set_xticks([])
+    ins.set_yticks([])
+    ins.grid(False)
+    for sp in ins.spines.values():
+        sp.set_visible(True)
+        sp.set_linewidth(0.4)
+    tail = 0.03
+    yh = ytop + 0.022
+    ext(ins, x1, ytop - c + 0.004, x1, yh + 0.008)
+    ext(ins, x1 + c, ytop + 0.004, x1 + c, yh + 0.008)
+    arrow(ins, (x1 - tail, yh), (x1, yh), both=False, size=3.5)
+    arrow(ins, (x1 + c + tail, yh), (x1 + c, yh), both=False, size=3.5)
+    ins.text(x1 + c / 2, yh + 0.004, rf"$c = {c * 1000:g}\ \mu$m", ha="center", va="bottom", fontsize=b - 1)
+    ins.set_title("Detail: one corner", fontsize=b - 1, pad=3)
+    save(fig, "fig_corner")
+
+
+def fig_tuning_zoom():
+    """The tuning sections side by side at one scale, in the drawings' style."""
+    t = use()
+    b = t["base"]
+    titles = {"B": "B, no tuning", "C": "C, two sparse excursions", "D": "D, dense accordion of four",
+              "F": "F, one broad trombone", "E": "E, the pair swung out", "C_far": "C far, at the launch"}
+    names = ["B", "C", "D", "F", "E", "C_far"]
+    W = t["double"]
+    gapx, gapy = 0.08 * SC, 0.28 * SC
+    xspan = 5.2
+    ylims = ((-2.3, -0.4), (-3.3, -0.4))          # the second row holds E's swing
+    tw = (W - 2 * gapx) / 3
+    ths = [tw * (y1 - y0) / xspan for y0, y1 in ylims]
+    Hh = sum(ths) + 2 * gapy
+    fig = plt.figure(figsize=(W, Hh))
+    for k, name in enumerate(names):
+        col, row = k % 3, k // 3
+        th = ths[row]
+        top_ = Hh - gapy - (ths[0] + gapy if row else 0.0)
+        ax = fig.add_axes([col * (tw + gapx) / W, (top_ - th) / Hh, tw / W, th / Hh])
+        g = geometry.build(name)
+        for net, fc in (("P", P_FILL), ("N", N_FILL)):
+            ax.add_patch(Polygon(g["copper"][net], closed=True, fc=fc, ec=INK, lw=0.45, zorder=2))
+            centreline(ax, g["centreline"][net], lw=0.35)
+        x0 = 0.4 if name == "C_far" else 7.1
+        ax.set_xlim(x0, x0 + xspan)
+        ax.set_ylim(*ylims[row])
+        bare(ax)
+        ax.set_title(titles[name], fontsize=b - 0.5, pad=2, loc="left")
+        if name == "B":
+            ax.plot([x0 + 0.3, x0 + 1.3], [-0.8, -0.8], color=INK, lw=0.6, solid_capstyle="butt")
+            for xx in (x0 + 0.3, x0 + 1.3):
+                ax.plot([xx, xx], [-0.9, -0.7], color=INK, lw=0.5)
+            ax.text(x0 + 0.8, -1.0, "1 mm", ha="center", va="top", fontsize=b - 1.5)
+    save(fig, "fig_tuning_zoom")
+
+
+def main(target="report"):
+    global TARGET
+    TARGET = target
     fig_model()
     fig_model3d()
     fig_xsec()
@@ -671,12 +863,17 @@ def main():
     fig_excursion()
     fig_variants()
     fig_flow()
-    gen = ROOT / "report" / "generated"
-    gen.mkdir(parents=True, exist_ok=True)
-    (gen / "diagrams.tex").write_text("% generated by scripts/fig_diagrams.py; do not edit\n"
-                                      + "".join(f"\\newcommand{{\\{k}}}{{{v}}}\n" for k, v in sorted(MACROS.items())))
+    if target == "blog":
+        fig_corner()
+        fig_tuning_zoom()
+    else:
+        gen = ROOT / "report" / "generated"
+        gen.mkdir(parents=True, exist_ok=True)
+        (gen / "diagrams.tex").write_text("% generated by scripts/fig_diagrams.py; do not edit\n"
+                                          + "".join(f"\\newcommand{{\\{k}}}{{{v}}}\n" for k, v in sorted(MACROS.items())))
     print("ok")
 
 
 if __name__ == "__main__":
-    main()
+    for tg in (sys.argv[1:] or ["report"]):
+        main(tg)

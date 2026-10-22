@@ -49,29 +49,68 @@ is a control. It swings both traces out together, which adds delay to the pair a
 to the difference between them. KiCad's DRC passed every board before any of them went
 into the solver.
 
-::figure fig_families
-alt: Seven plan views drawn at one scale from the copper the solver uses. A, a straight pair. B, the untuned U-bend, N minus P = +1.596 mm. C, two excursions next to the bend, A = 0.487 mm. D, four small excursions next to the bend, A = 0.287 mm. F, one broad excursion, A = 0.886 mm. C far, the two excursions next to the launch. E, both traces swinging out together, N minus P still +1.596 mm. P is copper, N is teal, and black squares mark the four ports.
-caption: The boards, drawn from the same copper polygons openEMS sees. Every tuned board has P and N exactly equal in length.
+::figure fig_variants
+alt: Seven boards as openEMS is given them, at one scale: gold copper on a green substrate with the four 50 ohm lumped ports in red on the launch plane. (a) B, the untuned U-bend, L_N minus L_P = 1.596 mm. (b) C, two sparse excursions, N = 2, A = 0.487 mm. (c) D, the dense accordion, N = 4, A = 0.287 mm. (d) F, one broad trombone, N = 1, A = 0.886 mm. (e) C far, C's excursions at the launch. (f) E, the pair-level control, L_N minus L_P = 1.596 mm. (g) A, a straight pair as long as the U-bend's mean centreline.
+caption: The boards as openEMS sees them. Every tuned board has P and N exactly equal in centreline length.
+::
+
+::figure fig_excursion
+alt: Board C's tuning section as a dimensioned drawing. P in copper and N in teal with their centrelines dash-dotted. Two excursions of amplitude A, each a long across the top, b apart, with fold spacing g inside the first. The pitch s between P and N, the tuning section's length, and its distance D to the bend.
+caption: Board C. The serpentine makes P exactly as long as N, ${len_C} mm each by the length report.
 ::
 
 ::figure fig_tuning_zoom
-alt: Close-ups of the tuning sections at one scale: the plain bend's straight leg, two sparse excursions, four small ones, one broad trombone, the pair-level swing and the two excursions moved next to the launch.
+alt: Six close-ups of the tuning sections at one scale, drawn as the board above: B with no tuning and a 1 mm scale bar, C's two sparse excursions, D's dense accordion of four, F's one broad trombone, E with the whole pair swung out, and C far's excursions at the launch.
 caption: The tuning sections side by side, at one scale.
 ::
 
-Each board takes four openEMS runs<sup><a href="#ref-2">[2]</a></sup>, one per port, with
-the other three ports sitting there as 50 Ω loads<sup><a href="#ref-3">[3]</a></sup>. That
-gives the full 4×4 S-matrix. scikit-rf<sup><a href="#ref-4">[4]</a></sup> turns it into
+::figure fig_xsec
+alt: Two cross-sections at true scale. (a) Microstrip: P and N, 0.25 mm wide and 35 micrometres thick, 0.508 mm apart on 0.2 mm of dielectric with epsilon r 4.3 and tan delta 0.02 over a hatched return plane, air above. (b) Stripline: the same traces midway between two planes 0.7 mm apart.
+caption: The two stackups, drawn at true scale. Everything below is microstrip until the stripline section.
+::
+
+## How copperhead simulates it
+
+openEMS<sup><a href="#ref-2">[2]</a></sup> solves Maxwell's equations around the copper
+on a grid of cells. The board sits in a box: the copper on its dielectric, a perfect
+conductor underneath as the return plane, and absorbing boundaries on the other five faces
+so the fields leave instead of reflecting back.
+
+::figure fig_model3d
+alt: Board B's model in three dimensions, its height drawn four times true scale: the green dielectric slab on the PEC floor, the two gold traces, four red lumped ports from the floor to the copper at the launch, and the dashed edges of the air box whose five open faces are Mur boundaries.
+caption: The model of board B. The height is drawn four times its true scale, or the slab would be a line.
+::
+
+Each run sends a pulse into one of the four ports, with the other three sitting there as
+50 Ω loads<sup><a href="#ref-3">[3]</a></sup>. Four runs give the full response of the
+board, its 4×4 S-matrix. scikit-rf<sup><a href="#ref-4">[4]</a></sup> turns that into
 differential and common-mode terms, and from there into what a receiver sees for a 50 ps
 edge. All in, copperhead ran ${runs} simulations.
 
-The numbers move a little with the mesh, so it solved the untuned bend and two of the
-tunings again on finer and coarser grids. The bend's skew moves by ±${unc_B} ps, C's by
-±${unc_C} ps and the dense accordion's by ±${unc_D} ps.
+::figure fig_flow
+alt: The pipeline as boxes in three groups. Geometry: the generator (geometry.py, solved lengths) and DRC (kicad-cli, P to N clearance). Stage III, full wave: the model (model.py, graded mesh), FDTD (openEMS, ${runs} runs) and S-parameters (sparams.py, 4-port, checks). Post-processing: mixed mode (scikit-rf, se2gmm), metrics (analysis.py, skew, TDR, eye) and convergence (convergence.py, error bounds). Under post-processing, Stage II: the line model (mtl.py, modes from A), fed from the mixed-mode step and read beside the metrics.
+caption: From copper to waveforms. The line model sits beside the full-wave results, calibrated on the straight board.
+::
 
-::figure fig_ports
-alt: Left, the cross-section at true scale: two 0.25 mm traces 0.508 mm apart on 0.2 mm of dielectric over the return plane. Right, fixture B with its four ports on the launch plane, 1 P near, 2 N near, 3 P far, 4 N far. Below, the pipeline from the geometry script through KiCad DRC, the openEMS model, four runs per board, the S-parameter extraction, scikit-rf's mixed-mode conversion, the analysis and the mesh checks.
-caption: The cross-section, the four ports and the path from copper to waveforms.
+## The mesh
+
+The cells are ${cell_um} µm across over the copper and grow away from it, ${cells_m} million
+of them for a bent board. The 45-degree corner cuts come out as staircases at that size,
+which is the first thing to check.
+
+::figure fig_model
+alt: (a) Board B in its computational domain: the green substrate from x = minus 2 to 16 mm and y = minus 5 to 4 mm, the gold traces, the four red ports on the launch plane at x = 0, and a white box marking the close-up. (b) The ${cell_um} micrometre mesh over board D's first excursions, white grid lines on green, with the cells whose centre lies in the copper filled gold, so the chamfers are staircased.
+caption: The domain as openEMS gets it, and the ${cell_um} µm mesh over board D's corners.
+::
+
+So copperhead solved the untuned bend, two of the tunings and the serpentines again on
+finer and coarser grids. On a ${fine_um} µm mesh the bend's skew moves by only
+${conv_B_shift} ps. The bend's skew carries ±${unc_B} ps, C's ±${unc_C} ps and the dense
+accordion's ±${unc_D} ps.
+
+::figure fig_convergence
+alt: Skew against the finest cell size, 60, 40, 27 and 18 micrometres, for the untuned bend B near 9.3 ps, C near 3.6 ps and D between 4.4 and 5.2 ps, with the error bound on each board's finest point.
+caption: The skew on each mesh. The bend barely moves. The dense accordion needed a fourth mesh.
 ::
 
 ## Equal length, unequal delay
@@ -123,8 +162,14 @@ Rubin and Singh<sup><a href="#ref-6">[6]</a></sup> found in single-ended meander
 prove it, because of those section lengths.
 
 The loose serpentine's own shortfall I'd put down to its corners, where the current cuts
-across the inside of each turn. No board here changes the corners on their own, so that's
-my best guess rather than a result. In the bend fixes each excursion lost ${per_exc_F}, ${per_exc_C} and ${per_exc_D} ps of the
+across the inside of each turn. That path is shorter than the centre line the length report
+measures. No board here changes the corners on their own, so that's my best guess rather
+than a result.
+
+::figure fig_corner
+alt: One excursion of board C's P trace. A black dashed line follows the centre line, which the length report measures. A copper line follows the path the current takes, pulled toward the inside of each of the four corners. Beside it, one corner at a larger scale, with the 45-degree chamfer's leg c = 75 micrometres dimensioned on the centreline.
+caption: Why I think the corners cost delay. The current cuts the inside of each turn, so its path is shorter than the centre line.
+:: In the bend fixes each excursion lost ${per_exc_F}, ${per_exc_C} and ${per_exc_D} ps of the
 delay its length promised, for one, two and four excursions. The loss per excursion shrinks
 as the excursions get smaller, but not as fast as their number grows, so a fix built from
 lots of small excursions still does worst.

@@ -106,6 +106,15 @@ def values() -> dict:
     for v, k in (("S_loose", "sec_loose"), ("S_tight", "sec_tight")):
         tu = geometry.build(v, p)["tuning"]
         val[k] = f"{tu['section_end'] - tu['section_start']:.2f}"
+    # the boards and the mesh, as the post's figures show them
+    val["len_C"] = f"{V['C']['P_len']:.3f}"
+    cells_ = json.loads((ROOT / "runs" / "medium" / "B" / "p1" / "provenance.json").read_text())["cells"]
+    val["cells_m"] = f"{cells_ / 1e6:.2f}"
+    val["cell_um"] = f"{cells['medium'] * 1000:.0f}"
+    val["fine_um"] = f"{cells['fine'] * 1000:.0f}"
+    cb = R["convergence"]["B"]["skew_50"]
+    val["conv_B_shift"] = f"{abs(cb['medium'] - cb['fine']):.2f}"
+    val["per_exc_lo"], val["per_exc_hi"] = val["per_exc_min"], val["per_exc_max"]
     # the report
     import pymupdf
     val["report_pages"] = str(pymupdf.open(ROOT / "report" / "report.pdf").page_count)

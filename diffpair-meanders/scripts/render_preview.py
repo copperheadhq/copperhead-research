@@ -108,6 +108,10 @@ def main():
         return f'<img src="img/{name}" alt="{alt}" loading="lazy"><span class="caption">{alt}</span>'
 
     html = re.sub(r'<img alt="([^"]*)" src="([^"]*)" ?/?>', image, html)
+    # the post's own figure blocks: <figure><img src=".." alt=".."><figcaption>..</figcaption></figure>
+    html = re.sub(r'<img src="([^"]*)" alt="([^"]*)">',
+                  lambda m: image(re.match(r'<img alt="([^"]*)" src="([^"]*)">', f'<img alt="{m.group(2)}" src="{m.group(1)}">')),
+                  html)
     html = html.replace("<table>", '<div class="table"><table>').replace("</table>", "</table></div>")
     page = (STYLE + '<div class="band"></div>\n<main class="page">\n'
             f'<div class="eyebrow">Signal integrity<span>{meta.get("date", "")}</span><span>{meta.get("author", "")}</span></div>\n'

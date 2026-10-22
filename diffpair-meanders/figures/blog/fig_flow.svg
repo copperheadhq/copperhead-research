@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="695.52pt" height="158.358857pt" viewBox="0 0 695.52 158.358857" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 158.358857 
+L 695.52 158.358857 
+L 695.52 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 2.16 156.198857 
+L 693.36 156.198857 
+L 693.36 2.16 
+L 2.16 2.16 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1"/>
+   <g id="matplotlib.axis_2"/>
+   <g id="patch_3">
+    <path d="M 6.603429 86.091429 
+L 171.504 86.091429 
+L 171.504 10.059429 
+L 6.603429 10.059429 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #f4f4f4; stroke-dasharray: 2.295,1.53; stroke-dashoffset: 0; stroke: #8a8a8a; stroke-width: 0.765; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 183.353143 86.091429 
+L 430.210286 86.091429 
+L 430.210286 10.059429 
+L 183.353143 10.059429 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #f4f4f4; stroke-dasharray: 2.295,1.53; stroke-dashoffset: 0; stroke: #8a8a8a; stroke-width: 0.765; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 442.059429 86.091429 
+L 688.916571 86.091429 
+L 688.916571 10.059429 
+L 442.059429 10.059429 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #f4f4f4; stroke-dasharray: 2.295,1.53; stroke-dashoffset: 0; stroke: #8a8a8a; stroke-width: 0.765; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 483.037714 153.236571 
+L 565.981714 153.236571 
+L 565.981714 90.041143 
+L 483.037714 90.041143 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #f4f4f4; stroke-dasharray: 2.295,1.53; stroke-dashoffset: 0; stroke: #8a8a8a; stroke-width: 0.765; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 13.515429 79.179429 
+L 82.635429 79.179429 
+L 82.635429 29.808 
+L 13.515429 29.808 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 95.472 79.179429 
+L 164.592 79.179429 
+L 164.592 29.808 
+L 95.472 29.808 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 190.265143 79.179429 
+L 259.385143 79.179429 
+L 259.385143 29.808 
+L 190.265143 29.808 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 272.221714 79.179429 
+L 341.341714 79.179429 
+L 341.341714 29.808 
+L 272.221714 29.808 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 354.178286 79.179429 
+L 423.298286 79.179429 
+L 423.298286 29.808 
+L 354.178286 29.808 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 448.971429 79.179429 
+L 518.091429 79.179429 
+L 518.091429 29.808 
+L 448.971429 29.808 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 530.928 79.179429 
+L 600.048 79.179429 
+L 600.048 29.808 
+L 530.928 29.808 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 612.884571 79.179429 
+L 682.004571 79.179429 
+L 682.004571 29.808 
+L 612.884571 29.808 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 489.949714 146.324571 
+L 559.069714 146.324571 
+L 559.069714 96.953143 
+L 489.949714 96.953143 
+z
+" clip-path="url(#pd8a81a2386)" style="fill: #ffffff; stroke: #000000; stroke-width: 0.935; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="48.075429" y="45.294838" transform="rotate(-0 48.075429 45.294838)">Generator</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="48.075429" y="59.349857" transform="rotate(-0 48.075429 59.349857)">geometry.py</text>
+   </g>
+   <g id="text_3">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="48.075429" y="72.579069" transform="rotate(-0 48.075429 72.579069)">solved lengths</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="130.032" y="45.294838" transform="rotate(-0 130.032 45.294838)">DRC</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="130.032" y="59.349857" transform="rotate(-0 130.032 59.349857)">kicad-cli</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="130.032" y="72.579069" transform="rotate(-0 130.032 72.579069)">P–N clearance</text>
+   </g>
+   <g id="text_7">
+    <text style="font-style: italic; font-size: 9.5px; font-family: 'Inter'; text-anchor: start" x="10.203429" y="22.142554" transform="rotate(-0 10.203429 22.142554)">Geometry</text>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="224.825143" y="45.294838" transform="rotate(-0 224.825143 45.294838)">Model</text>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="224.825143" y="59.349857" transform="rotate(-0 224.825143 59.349857)">model.py</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="224.825143" y="72.579069" transform="rotate(-0 224.825143 72.579069)">graded mesh</text>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="306.781714" y="45.294838" transform="rotate(-0 306.781714 45.294838)">FDTD</text>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="306.781714" y="59.349857" transform="rotate(-0 306.781714 59.349857)">openEMS</text>
+   </g>
+   <g id="text_13">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="306.781714" y="72.579069" transform="rotate(-0 306.781714 72.579069)">140 runs</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="388.738286" y="45.294838" transform="rotate(-0 388.738286 45.294838)">S-parameters</text>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="388.738286" y="59.349857" transform="rotate(-0 388.738286 59.349857)">sparams.py</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="388.738286" y="72.579069" transform="rotate(-0 388.738286 72.579069)">4-port, checks</text>
+   </g>
+   <g id="text_17">
+    <text style="font-style: italic; font-size: 9.5px; font-family: 'Inter'; text-anchor: start" x="186.953143" y="22.142554" transform="rotate(-0 186.953143 22.142554)">Stage III: full wave</text>
+   </g>
+   <g id="text_18">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="483.531429" y="45.294838" transform="rotate(-0 483.531429 45.294838)">Mixed mode</text>
+   </g>
+   <g id="text_19">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="483.531429" y="59.349857" transform="rotate(-0 483.531429 59.349857)">scikit-rf</text>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="483.531429" y="72.579069" transform="rotate(-0 483.531429 72.579069)">se2gmm</text>
+   </g>
+   <g id="text_21">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="565.488" y="45.294838" transform="rotate(-0 565.488 45.294838)">Metrics</text>
+   </g>
+   <g id="text_22">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="565.488" y="59.349857" transform="rotate(-0 565.488 59.349857)">analysis.py</text>
+   </g>
+   <g id="text_23">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="565.488" y="72.579069" transform="rotate(-0 565.488 72.579069)">skew, TDR, eye</text>
+   </g>
+   <g id="text_24">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="647.444571" y="45.294838" transform="rotate(-0 647.444571 45.294838)">Convergence</text>
+   </g>
+   <g id="text_25">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="647.444571" y="59.349857" transform="rotate(-0 647.444571 59.349857)">convergence.py</text>
+   </g>
+   <g id="text_26">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="647.444571" y="72.579069" transform="rotate(-0 647.444571 72.579069)">error bounds</text>
+   </g>
+   <g id="text_27">
+    <text style="font-style: italic; font-size: 9.5px; font-family: 'Inter'; text-anchor: start" x="445.659429" y="22.142554" transform="rotate(-0 445.659429 22.142554)">Post-processing</text>
+   </g>
+   <g id="text_28">
+    <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle" x="524.509714" y="112.439981" transform="rotate(-0 524.509714 112.439981)">Line model</text>
+   </g>
+   <g id="text_29">
+    <text style="font-size: 9px; font-family: 'IBM Plex Mono'; text-anchor: middle" x="524.509714" y="126.495" transform="rotate(-0 524.509714 126.495)">mtl.py</text>
+   </g>
+   <g id="text_30">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: middle; fill: #444444" x="524.509714" y="139.724211" transform="rotate(-0 524.509714 139.724211)">modes from A</text>
+   </g>
+   <g id="text_31">
+    <text style="font-style: italic; font-size: 9.5px; font-family: 'Inter'; text-anchor: end" x="478.717714" y="125.094668" transform="rotate(-0 478.717714 125.094668)">Stage II</text>
+   </g>
+   <g id="patch_16">
+    <path d="M 82.635429 54.493714 
+Q 89.053714 54.493714 94.521671 54.493714 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 91.121671 52.793714 
+L 94.521671 54.493714 
+L 91.121671 56.193714 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 164.592 54.493714 
+Q 177.428571 54.493714 189.314814 54.493714 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 185.914814 52.793714 
+L 189.314814 54.493714 
+L 185.914814 56.193714 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 259.385143 54.493714 
+Q 265.803429 54.493714 271.271385 54.493714 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 267.871385 52.793714 
+L 271.271385 54.493714 
+L 267.871385 56.193714 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 341.341714 54.493714 
+Q 347.76 54.493714 353.227957 54.493714 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 349.827957 52.793714 
+L 353.227957 54.493714 
+L 349.827957 56.193714 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 423.298286 54.493714 
+Q 436.134857 54.493714 448.0211 54.493714 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 444.6211 52.793714 
+L 448.0211 54.493714 
+L 444.6211 56.193714 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 518.091429 54.493714 
+Q 524.509714 54.493714 529.977671 54.493714 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 526.577671 52.793714 
+L 529.977671 54.493714 
+L 526.577671 56.193714 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 600.048 54.493714 
+Q 606.466286 54.493714 611.934243 54.493714 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 608.534243 52.793714 
+L 611.934243 54.493714 
+L 608.534243 56.193714 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_23">
+    <path d="M 469.707429 86.091429 
+Q 483.284571 88.066286 495.921282 89.904353 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 492.801386 87.73266 
+L 495.921282 89.904353 
+L 492.31199 91.097254 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_24">
+    <path d="M 552.157714 90.041143 
+Q 565.734857 88.066286 578.371567 86.228219 
+" clip-path="url(#pd8a81a2386)" style="fill: none; stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+    <path d="M 574.762276 85.035317 
+L 578.371567 86.228219 
+L 575.251671 88.399911 
+z
+" clip-path="url(#pd8a81a2386)" style="stroke: #000000; stroke-width: 0.85; stroke-linejoin: miter"/>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pd8a81a2386">
+   <rect x="2.16" y="2.16" width="691.2" height="154.038857"/>
+  </clipPath>
+ </defs>
+</svg>

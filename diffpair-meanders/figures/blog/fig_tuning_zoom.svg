@@ -41,17 +41,17 @@ z
    <g id="line2d_1">
     <path d="M 10.179559 28.230522 
 L 36.911424 28.230522 
-" clip-path="url(#p1943db1ed8)" style="fill: none; stroke: #57575e; stroke-width: 1.2"/>
+" clip-path="url(#pd5c6aac803)" style="fill: none; stroke: #57575e; stroke-width: 1.2"/>
    </g>
    <g id="line2d_2">
     <path d="M 10.179559 31.438346 
 L 10.179559 25.022698 
-" clip-path="url(#p1943db1ed8)" style="fill: none; stroke: #57575e; stroke-linecap: round"/>
+" clip-path="url(#pd5c6aac803)" style="fill: none; stroke: #57575e; stroke-linecap: round"/>
    </g>
    <g id="line2d_3">
     <path d="M 36.911424 31.438346 
 L 36.911424 25.022698 
-" clip-path="url(#p1943db1ed8)" style="fill: none; stroke: #57575e; stroke-linecap: round"/>
+" clip-path="url(#pd5c6aac803)" style="fill: none; stroke: #57575e; stroke-linecap: round"/>
    </g>
    <g id="patch_3">
     <path d="M 133.131557 44.937938 
@@ -421,7 +421,7 @@ L 133.160716 51.620904
 L -187.636239 51.620904 
 L -187.636239 44.937938 
 z
-" clip-path="url(#p1943db1ed8)" style="fill: #a75f14; opacity: 0.9"/>
+" clip-path="url(#pd5c6aac803)" style="fill: #a75f14; opacity: 0.9"/>
    </g>
    <g id="patch_4">
     <path d="M 133.131557 58.517725 
@@ -791,7 +791,7 @@ L 133.160716 65.200691
 L -187.636239 65.200691 
 L -187.636239 58.517725 
 z
-" clip-path="url(#p1943db1ed8)" style="fill: #008b9f; opacity: 0.9"/>
+" clip-path="url(#pd5c6aac803)" style="fill: #008b9f; opacity: 0.9"/>
    </g>
    <g id="text_1">
     <text style="font-size: 9.5px; font-family: 'Inter'; text-anchor: middle; fill: #57575e" x="23.545492" y="44.116613" transform="rotate(-0 23.545492 44.116613)">1 mm</text>
@@ -1211,7 +1211,7 @@ L 202.3598 51.620904
 L -6.196239 51.620904 
 L -6.196239 44.937938 
 z
-" clip-path="url(#p80df2a868c)" style="fill: #a75f14; opacity: 0.9"/>
+" clip-path="url(#p66f1763040)" style="fill: #a75f14; opacity: 0.9"/>
    </g>
    <g id="patch_7">
     <path d="M 314.571557 58.517725 
@@ -1581,7 +1581,7 @@ L 314.600716 65.200691
 L -6.196239 65.200691 
 L -6.196239 58.517725 
 z
-" clip-path="url(#p80df2a868c)" style="fill: #008b9f; opacity: 0.9"/>
+" clip-path="url(#p66f1763040)" style="fill: #008b9f; opacity: 0.9"/>
    </g>
    <g id="text_3">
     <text style="font-weight: 700; font-size: 10.5px; font-family: 'Inter'; text-anchor: start; fill: #0a0a0a" x="183.6" y="12.331875" transform="rotate(-0 183.6 12.331875)">C  sparse, 2 excursions</text>
@@ -2030,7 +2030,7 @@ L 395.829139 51.620904
 L 175.243761 51.620904 
 L 175.243761 44.937938 
 z
-" clip-path="url(#p8bbfea5d53)" style="fill: #a75f14; opacity: 0.9"/>
+" clip-path="url(#p7ed3198a7b)" style="fill: #a75f14; opacity: 0.9"/>
    </g>
    <g id="patch_10">
     <path d="M 496.011557 58.517725 
@@ -2400,7 +2400,7 @@ L 496.040716 65.200691
 L 175.243761 65.200691 
 L 175.243761 58.517725 
 z
-" clip-path="url(#p8bbfea5d53)" style="fill: #008b9f; opacity: 0.9"/>
+" clip-path="url(#p7ed3198a7b)" style="fill: #008b9f; opacity: 0.9"/>
    </g>
    <g id="text_4">
     <text style="font-weight: 700; font-size: 10.5px; font-family: 'Inter'; text-anchor: start; fill: #0a0a0a" x="365.04" y="12.331875" transform="rotate(-0 365.04 12.331875)">D  dense accordion, 4 excursions</text>
@@ -2801,7 +2801,7 @@ L 36.958919 161.689357
 L -187.636239 161.689357 
 L -187.636239 155.00639 
 z
-" clip-path="url(#p91b651ea01)" style="fill: #a75f14; opacity: 0.9"/>
+" clip-path="url(#p7633a222b3)" style="fill: #a75f14; opacity: 0.9"/>
    </g>
    <g id="patch_13">
     <path d="M 133.131557 168.586178 
@@ -3171,7 +3171,7 @@ L 133.160716 175.269144
 L -187.636239 175.269144 
 L -187.636239 168.586178 
 z
-" clip-path="url(#p91b651ea01)" style="fill: #008b9f; opacity: 0.9"/>
+" clip-path="url(#p7633a222b3)" style="fill: #008b9f; opacity: 0.9"/>
    </g>
    <g id="text_5">
     <text style="font-weight: 700; font-size: 10.5px; font-family: 'Inter'; text-anchor: start; fill: #0a0a0a" x="2.16" y="122.400328" transform="rotate(-0 2.16 122.400328)">F  one broad trombone</text>
@@ -4758,7 +4758,7 @@ L 194.285876 161.689357
 L -6.196239 161.689357 
 L -6.196239 155.00639 
 z
-" clip-path="url(#pc5bc750e31)" style="fill: #a75f14; opacity: 0.9"/>
+" clip-path="url(#p820f3c633e)" style="fill: #a75f14; opacity: 0.9"/>
    </g>
    <g id="patch_16">
     <path d="M 194.299616 168.586178 
@@ -6330,7 +6330,7 @@ L 194.285876 175.269144
 L -6.196239 175.269144 
 L -6.196239 168.586178 
 z
-" clip-path="url(#pc5bc750e31)" style="fill: #008b9f; opacity: 0.9"/>
+" clip-path="url(#p820f3c633e)" style="fill: #008b9f; opacity: 0.9"/>
    </g>
    <g id="text_6">
     <text style="font-weight: 700; font-size: 10.5px; font-family: 'Inter'; text-anchor: start; fill: #0a0a0a" x="183.6" y="122.400328" transform="rotate(-0 183.6 122.400328)">E  pair-level excursion (control)</text>
@@ -6747,7 +6747,7 @@ L 382.463207 161.689357
 L 354.347254 161.689357 
 L 354.347254 155.00639 
 z
-" clip-path="url(#p28e156ff70)" style="fill: #a75f14; opacity: 0.9"/>
+" clip-path="url(#p59a45283a7)" style="fill: #a75f14; opacity: 0.9"/>
    </g>
    <g id="patch_19">
     <path d="M 675.115051 168.586178 
@@ -7117,7 +7117,7 @@ L 675.14421 175.269144
 L 354.347254 175.269144 
 L 354.347254 168.586178 
 z
-" clip-path="url(#p28e156ff70)" style="fill: #008b9f; opacity: 0.9"/>
+" clip-path="url(#p59a45283a7)" style="fill: #008b9f; opacity: 0.9"/>
    </g>
    <g id="text_7">
     <text style="font-weight: 700; font-size: 10.5px; font-family: 'Inter'; text-anchor: start; fill: #0a0a0a" x="365.04" y="122.400328" transform="rotate(-0 365.04 122.400328)">C far  sparse, at the launch</text>
@@ -7125,22 +7125,22 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p1943db1ed8">
+  <clipPath id="pd5c6aac803">
    <rect x="2.16" y="14.86459" width="139.005696" height="81.532187"/>
   </clipPath>
-  <clipPath id="p80df2a868c">
+  <clipPath id="p66f1763040">
    <rect x="183.6" y="14.86459" width="139.005696" height="81.532187"/>
   </clipPath>
-  <clipPath id="p8bbfea5d53">
+  <clipPath id="p7ed3198a7b">
    <rect x="365.04" y="14.86459" width="139.005696" height="81.532187"/>
   </clipPath>
-  <clipPath id="p91b651ea01">
+  <clipPath id="p7633a222b3">
    <rect x="2.16" y="124.933043" width="139.005696" height="81.532187"/>
   </clipPath>
-  <clipPath id="pc5bc750e31">
+  <clipPath id="p820f3c633e">
    <rect x="183.6" y="124.933043" width="139.005696" height="81.532187"/>
   </clipPath>
-  <clipPath id="p28e156ff70">
+  <clipPath id="p59a45283a7">
    <rect x="365.04" y="124.933043" width="139.005696" height="81.532187"/>
   </clipPath>
  </defs>

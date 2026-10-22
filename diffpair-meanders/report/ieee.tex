@@ -1,0 +1,48 @@
+% The IEEE version of the paper: the same abstract, body, figures and bibliography as
+% main.tex, in the IEEEtran conference class. Build: ../tools/tectonic ieee.tex
+\documentclass[conference]{IEEEtran}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath}   % Times, as IEEE requires
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor={black},citecolor={black},urlcolor={blue!60!black}]{hyperref}
+\graphicspath{{../figures/report/}}
+\input{common.tex}
+\input{teaser-caption.tex}
+
+\begin{document}
+
+\title{Beyond Length Matching: Electromagnetic Verification and Optimization of Differential-Pair Meanders}
+
+\author{\IEEEauthorblockN{Animesh Chouhan}
+\IEEEauthorblockA{Copperhead\\
+\href{mailto:animesh@copperhead.sh}{animesh@copperhead.sh}}}
+
+\maketitle
+
+\begin{abstract}
+\input{abstract.tex}
+\end{abstract}
+
+\begin{IEEEkeywords}
+Differential signaling, length matching, serpentine delay line, intra-pair skew, mode conversion, mixed-mode
+S-parameters, FDTD, signal integrity.
+\end{IEEEkeywords}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_teaser}
+\caption{\TeaserCaption}
+\label{fig:teaser}
+\end{figure*}
+
+\input{body.tex}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

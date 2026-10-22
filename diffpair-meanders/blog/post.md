@@ -92,26 +92,31 @@ and 0.3 ps for F, C and D. Length isn't what's missing.
 What the line model can't see is the corners and the coupling between folds. To pull
 those apart copperhead ran one more pair of boards. Each is a straight pair with 6 mm
 added to one trace in three excursions, once with the folds 1.0 mm apart and once at the
-0.15 mm clearance rule. Same corners and same added length.
+0.15 mm clearance rule. Same corners and same added length. They aren't quite the same
+board, though. The tight one packs its folds into 2.15 mm against 6.40 mm, so P also
+spends less of its run away from N.
 
 Call the delay a tuning actually adds, over what its length says it should add, its
 efficiency. The loose serpentine manages 0.84. Packed to the clearance rule it drops to
-0.68, and it came out 16 to 24 points lower on every mesh. That's the fold coupling Wu
-and Chao<sup><a href="#ref-5">[5]</a></sup> and Rubin and
-Singh<sup><a href="#ref-6">[6]</a></sup> found in single-ended meanders.
+0.68, and it came out 16 to 24 points lower on every mesh. That fits the fold coupling
+Wu and Chao<sup><a href="#ref-5">[5]</a></sup> and Rubin and
+Singh<sup><a href="#ref-6">[6]</a></sup> found in single-ended meanders. It doesn't
+prove it, because of those section lengths.
 
 The loose serpentine's own shortfall I'd put down to its corners, where the current cuts
-across the inside of each turn. In the bend fixes each excursion lost 1.6, 1.4 and 1.1
-ps of the delay its length promised, for one, two and four excursions. The loss per
-excursion shrinks as the excursions get smaller, but not as fast as their number grows,
-so a fix built from lots of small excursions still does worst.
+across the inside of each turn. No board here changes the corners on their own, so
+that's my best guess rather than a result. In the bend fixes each excursion lost 1.6,
+1.4 and 1.1 ps of the delay its length promised, for one, two and four excursions. The
+loss per excursion shrinks as the excursions get smaller, but not as fast as their
+number grows, so a fix built from lots of small excursions still does worst.
 
 <figure><img src="../figures/blog/fig_eta.png" alt="Bars of delay efficiency, the delay a tuning adds over the delay its length predicts. One broad excursion 0.74, two excursions 0.60, the same two at the launch 0.52, four excursions 0.44, and in teal the 6 mm serpentine with folds 1.0 mm apart 0.84 and 0.15 mm apart 0.68. A dashed line marks 1.0."><figcaption>How much of its promised delay each tuning delivers.</figcaption></figure>
 
 ## Stripline didn't save it
 
 Microstrip runs its two modes at different speeds, so some of this could have been a
-microstrip quirk. copperhead put the same copper between two planes and ran it again.
+microstrip quirk. copperhead put the same copper between two planes and ran it again, on
+one mesh only.
 
 It wasn't. Geometry predicts the stripline bend to 0.6 % (10.97 ps against 11.04 ps).
 The tunings removed 81, 64 and 42 % of the skew. In microstrip they removed 75, 61 and
@@ -119,9 +124,9 @@ The tunings removed 81, 64 and 42 % of the skew. In microstrip they removed 75, 
 
 Tight folds still cost 20 points. copperhead had written into the first draft of its
 report that this penalty should shrink in stripline, because far-end coupling between
-parallel lines vanishes there. It doesn't shrink. Neighbouring folds carry current in
-opposite directions. The coupling that shortcuts them is backward coupling and stripline
-has plenty of that.
+parallel lines vanishes there. It doesn't shrink. My best guess, which nothing here
+tests, is that neighbouring folds carry current in opposite directions. The coupling
+that shortcuts them would then be backward coupling, and stripline has plenty of that.
 
 <figure><img src="../figures/blog/fig_stripline.png" alt="Paired bars of delay efficiency for the same copper in microstrip (copper) and stripline (teal): one excursion 0.74 and 0.80, two 0.60 and 0.64, four 0.44 and 0.42, serpentine with 1.0 mm folds 0.84 and 0.84, and with 0.15 mm folds 0.68 and 0.64."><figcaption>The same copper in microstrip and stripline, each against its own nominal velocity.</figcaption></figure>
 
@@ -131,7 +136,8 @@ C far is the same tuning as C, moved next to the launch. Its skew at the receive
 much worse (4.4 ps against 3.6 ps). Its mode conversion is. Between the tuning and the
 bend the pair carries skew the other way, and the two corrections drift out of phase as
 the frequency goes up. Read as a skew, C far's grows from 4.1 ps at 5 GHz to 6.5 ps at
-25 GHz while C's stays flat.
+25 GHz while C's stays flat. That's one placement against another, not a sweep of the
+distance.
 
 <figure><img src="../figures/blog/fig_fd_skew.png" alt="Skew read from the ratio of common-mode to differential transmission at each frequency from 1 to 30 GHz. The untuned bend sits near 9.5 ps in grey. C next to the bend stays near 3.6 ps in teal. C at the launch rises from about 4.1 ps at 5 GHz to about 6.5 ps at 25 GHz in copper."><figcaption>The same tuning next to the bend and at the launch, read as a skew at each frequency.</figcaption></figure>
 
@@ -161,9 +167,10 @@ rate. By CAD measure P is now longer than N. The line model says all three overs
 -1.9 ps for F, -3.0 ps for C and -4.5 ps for D.
 
 openEMS put F at 0.15 ps and C at 0.56 ps, so one iteration was enough for those two.
-The dense accordion only came down to 1.9 ps. Stretching its tightly packed verticals
-also tightens the coupling between them, so each extra millimetre delivered 62 % of what
-it should have, against 83 % for C and 92 % for F.
+Neither was rerun on other meshes, so the ±0.3 ps from C's mesh check is a loan here,
+not a measurement. The dense accordion only came down to 1.9 ps. Each extra millimetre
+delivered 62 % of what it should have, against 83 % for C and 92 % for F. My guess is
+that stretching its tightly packed verticals tightens the coupling between them too.
 
 <figure><img src="../figures/blog/fig_pareto.png" alt="Two scatter plots of skew against cost. Left, skew against the board area the tuning takes, with the untuned bend, D, D sized from its residual, C sized from its residual and F sized from its residual on the front. Right, skew against worst differential return loss, with C sized from its residual and F sized from its residual on the front."><figcaption>Skew against board area and against return loss. The points on the dashed line are the ones nothing else beats on both.</figcaption></figure>
 
@@ -224,16 +231,22 @@ All of this is simulation. Nothing was built or measured. It's one trace width a
 pitch in one microstrip and one stripline stackup. The ports are lumped and the return
 planes perfect. The copper has no roughness.
 
+Every full-wave number here comes from one solver, openEMS. The line model was
+calibrated on its runs, so the two agreeing isn't an independent check. Nor are the
+mechanisms pinned down. The fold result is tangled up with section length, and the
+corners are a guess by elimination.
+
 The report has a coupon plan for checking it on real boards. The first thing I'd want to
 see on a VNA is the dense accordion leaving 5.2 ps where the length report says zero.
 
 ## The full report
 
-copperhead wrote the report and drew every figure in this post. It runs to 12 pages with
-the method, the mesh checks and the coupon plan. copperhead checked each of its 17
-references against Crossref or its source page<sup><a href="#ref-9">[9]</a></sup>. The
-scripts, the S-parameter files and the raw solver runs are in the study's repository. A
-script fills in every number in this post from those files.
+copperhead wrote the report and drew every figure in this post. It runs to 14 pages with
+the method, the mesh checks, the related work and the coupon plan. copperhead checked
+each of its 26 references against Crossref or its source
+page<sup><a href="#ref-9">[9]</a></sup>. The scripts, the S-parameter files and the raw
+solver runs are in the study's repository. A script fills in every number in this post
+from those files.
 
 ## References
 
@@ -289,6 +302,6 @@ Each entry says which claim in the text it carries. Web sources were read on 19 
 
 9. <a id="ref-9"></a>
    Beyond Length Matching: Electromagnetic Verification and Optimization of
-   Differential-Pair Meanders, 12 pages.\
+   Differential-Pair Meanders, 14 pages.\
    [/blog/diffpair-meanders-report.pdf](/blog/diffpair-meanders-report.pdf)\
    Every number in this post with its method, its mesh checks and the limitations.

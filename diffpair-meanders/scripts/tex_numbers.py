@@ -188,6 +188,11 @@ def main():
     m("SolverVersion", recs[0]["solver_version"].replace("_", "\\_"))
     m("CellsMedium", f(max(r["cells"] for r in recs if r["level"] == "medium" and r["variant"] == "B") / 1e6, 2))
     m("CellsFine", f(max(r["cells"] for r in recs if r["level"] == "fine" and r["variant"] == "B") / 1e6, 2))
+    # the serpentines' tuning sections: same corners, amplitude and added length, but not
+    # the same section length, so P runs uncoupled from N over a different length
+    for v, s in (("S_loose", "Sloose"), ("S_tight", "Stight")):
+        tu = geometry.build(v, p)["tuning"]
+        m(f"SecLen{s}", f(tu["section_end"] - tu["section_start"], 2))
     gen = ROOT / "report" / "generated"
     gen.mkdir(parents=True, exist_ok=True)
     (gen / "numbers.tex").write_text("\n".join(out) + "\n")
@@ -205,7 +210,8 @@ def main():
         t50 = row["timing"]["50"]
         bd = row["bands"]["0.1-20GHz"]
         unc = row.get("uncertainty_ps")
-        sk = f(t50["skew"], 2) + (f" $\\pm$ {f(unc, 2)}" if unc else "")
+        own = row.get("uncertainty_from") in (None, v)
+        sk = f(t50["skew"], 2) + (f" $\\pm$ {f(unc, 2)}" + ("" if own else "$^\\dagger$") if unc else "")
         t.append(f"{LABEL[v]} & {f(row.get('added_mm'), 3) if 'added_mm' in row else '--'} & {sk} & "
                  f"{f(t50.get('eta'), 2)} & {f(row.get('mtl_skew_50'), 2)} & {f(t50['vc_pp_rel'] * 100, 2)} & "
                  f"{f(bd['Sdd11_max_dB'], 1)} & {f(bd['Scd21_mean_dB'], 1) if v != 'A' else '--'} & "

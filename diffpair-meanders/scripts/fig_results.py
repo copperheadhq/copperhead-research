@@ -66,7 +66,13 @@ def fig_skew(target):
         colour = S.CONTEXT if v in ("B", "E") else (S.COPPER_FILL if v.endswith("_cal") else S.COPPER)
         ax.barh(yi, s, height=0.56, color=colour, edgecolor=S.COPPER if v.endswith("_cal") else "none",
                 lw=1.0, zorder=3)
-        ax.errorbar(s, yi, xerr=e, fmt="none", ecolor=S.INK, elinewidth=0.8, capsize=2, zorder=4)
+        # a bound from this variant's own convergence study is solid; one borrowed from a
+        # converged variant with the same smallest features is dashed (Section 6)
+        own = V[v].get("uncertainty_from") in (None, v)
+        eb = ax.errorbar(s, yi, xerr=e, fmt="none", ecolor=S.INK if own else S.SOFT, elinewidth=0.8, capsize=2,
+                         zorder=4)
+        if not own:
+            eb[-1][0].set_linestyle((0, (2, 1.5)))
         if "mtl_skew_50" in V[v]:
             ax.plot(V[v]["mtl_skew_50"], yi, marker="D", ms=4.5 if target == "report" else 6.5, color=S.TEAL,
                     mec="white", mew=0.8, zorder=5)

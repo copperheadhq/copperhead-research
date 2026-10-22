@@ -1,0 +1,18 @@
+% shared by main.tex (the report) and ieee.tex (the IEEE version); edit here
+A 180-degree U-bend in a differential pair makes the inner trace shorter by $\pi s$, and the usual fix is a
+serpentine that adds the same length back. We test that fix with full-wave simulation instead of assuming it. We solve a controlled four-port fixture ($s = 0.508$\,mm, 20\,mil) in openEMS (FDTD) for \GeomCount{} geometries in
+microstrip and stripline, \RunCount{} single-port-excited runs in all. Every result is taken through mixed-mode
+S-parameters to receiver waveforms. The untuned bend gives \SkewB\,ps of skew, against \SkewSingle\,ps from geometry and the
+single-line effective permittivity. Tuning that makes the two centrelines exactly equal in length removes only
+\RemovedPctD--\RemovedPctF\,\% of that skew. \SkewF--\SkewD\,ps remain, and the shortfall grows with the number
+of excursions. Where a tuning was solved on three or more meshes its value carries a mesh-based bound
+($\pm$\UncC\,ps for C, $\pm$\UncD\,ps for D). The broad tuning F was solved on one mesh only. A transmission-line model built from the same lengths predicts
+less than 1\,ps. In a serpentine experiment, folds closer together delivered less of
+their predicted delay (delay efficiency \EtaSloose{} with folds 1.0\,mm apart, \EtaStight{} at 0.15\,mm). This is consistent with coupling between the folds. The shortfall that remains with loose folds is consistent with an
+effect of the corners. Neither mechanism is isolated here. The same copper in stripline, solved on one mesh,
+shows the same pattern. At 16\,Gb/s the
+skew hardly closes the differential eye, from \EyeHA{} to \EyeHB\,\% of the swing, but turns \EyeVcB\,\% of the
+swing into common mode. Sizing the tuning from its own residual in one more EM iteration brings the skew to \SkewFcal\ and
+\SkewCcal\,ps for the broad and sparse tunings, but only to \SkewDcal\,ps for the dense accordion, consistent with its added amplitude coupling across its
+folds too. Every result is a simulation from one solver, openEMS. Nothing was measured. A coupon plan for
+measuring the predictions is given.

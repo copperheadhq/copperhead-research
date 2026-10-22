@@ -102,6 +102,10 @@ def values() -> dict:
     three = convergence.gci(cd["fine"], cd["medium"], cd["coarse"], (cells["coarse"] / cells["fine"]) ** 0.5)
     val["gci_D_three"] = f"{three['gci']:.1f}"
     val["conv_D_ext"] = f"{R['convergence']['D']['extrapolated']:.1f}"
+    # the serpentines' section lengths: the tight pair packs the same added length shorter
+    for v, k in (("S_loose", "sec_loose"), ("S_tight", "sec_tight")):
+        tu = geometry.build(v, p)["tuning"]
+        val[k] = f"{tu['section_end'] - tu['section_start']:.2f}"
     # the report
     import pymupdf
     val["report_pages"] = str(pymupdf.open(ROOT / "report" / "report.pdf").page_count)

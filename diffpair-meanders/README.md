@@ -27,6 +27,7 @@ Everything is simulated. Nothing was built or measured; `report/main.pdf` sectio
 | `scripts/calibrate.py` | The EM-informed added lengths recorded in `parameters.yaml` |
 | `scripts/results.py` | Gathers every quoted number into `build/results/results.json` |
 | `scripts/fig_diagrams.py` | The report's diagrams in a paper's style: the model views (domain, ports, mesh, 3D), the dimensioned cross-sections, bend and tuning section, and the pipeline |
+| `scripts/fig_teaser.py` | The report's first-page figure: board D from above as openEMS meshes it (the medium mesh drawn, with an inset of the staircased excursions), beside its receiver waveforms |
 | `scripts/fig_geometry.py` | The post's geometry figures, in copperhead's style |
 | `scripts/fig_results.py` | The data plots, PDF for the report (Latin Modern) and PNG/SVG for the post (Inter) |
 | `scripts/tex_numbers.py`, `scripts/render_post.py` | The report's macros and tables, and the post, from `results.json` |
@@ -68,9 +69,10 @@ python scripts/sparams.py coarse B C D S_ref S_loose S_tight
 python scripts/sparams.py fine B C D S_ref S_loose S_tight
 python scripts/mtl.py medium
 python scripts/results.py
-python scripts/fig_diagrams.py && python scripts/fig_geometry.py && python scripts/fig_results.py
+python scripts/fig_diagrams.py && python scripts/fig_teaser.py && python scripts/fig_geometry.py && python scripts/fig_results.py
 python scripts/tex_numbers.py && python scripts/render_post.py
-cd report && tectonic main.tex
+cd report && tectonic main.tex   # the report (report.pdf is a copy of main.pdf)
+cd report && tectonic ieee.tex   # the same text in IEEEtran, Times
 ```
 
 A run whose `provenance.json` names the same model hash is skipped, so the pool can be stopped and started
@@ -100,3 +102,5 @@ times faster than one process on six threads.
   variants' bound.
 - Edges faster than 35 ps and frequencies above 30 GHz are outside the simulated band.
 - Mode conversion and common-mode voltage are reported; radiated emission is not modelled and not claimed.
+
+The manuscript is split so the report and the IEEE version share one text: `report/body.tex` (sections), `report/abstract.tex`, `report/common.tex` (macros and float settings) and `report/teaser-caption.tex`; `report/main.tex` and `report/ieee.tex` are only front ends.

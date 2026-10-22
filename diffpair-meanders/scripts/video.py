@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import importlib.util
+import inspect
 import io
 import json
 import math
@@ -60,7 +61,7 @@ MPL = {"font.family": "Inter", "mathtext.fontset": "cm", "lines.scale_dashes": F
        "hatch.linewidth": 0.5, "axes.unicode_minus": True}
 plt.rcParams.update(MPL)
 
-MU, NB, MINUS, PM = "µ", "\u00a0", "−", "±"
+MU, NB, MINUS, PM, EN_DASH = "µ", "\u00a0", "−", "±", "–"
 
 #: The video's title, in the form of the user's other videos (the user asked
 #: for the fang prefix on 2026-10-19).
@@ -72,6 +73,17 @@ SWEEP = 2.6
 #: Grey for a reading that a later one replaces, and the tints behind a part
 #: a scene is about (copper's, and teal's for N).
 OLD, GLOW, TINT, TEAL_GLOW = "#a9a9b2", "#ecd3b8", "#e9c9a6", "#bfe3e8"
+
+#: Traces as the report's figures draw them (the user asked for this style on 2026-10-22):
+#: fills of the trace colours, a dark outline and the dash-dot centreline a length report
+#: measures. The fills are a step stronger than the report's, so they hold on a screen
+#: (asked for the same day); the centreline still reads on both.
+P_FILL, N_FILL = "#E0AE74", "#7FC6D2"
+
+#: A length traced over a trace's fill (the bend's arcs, the current's path round a
+#: corner). The light theme draws it in the series colours; the dark theme a step
+#: lighter than its fills (DARK_NAMED), since its chart colours sit on the fills' own hue.
+P_LINE, N_LINE = "#A75F14", "#008B9F"
 
 #: The solver's view: the domain, the metal, the lumped ports.
 SUBSTRATE, SUBSTRATE_EDGE, METAL, METAL_EDGE, PORT_RED = "#2D6A49", "#173B28", "#E9B949", "#6E5210", "#D7362B"
@@ -91,6 +103,80 @@ FADE_IN = 9
 
 #: Dash-dot for centrelines, in points.
 DASHDOT = (5.0, 1.6, 1.2, 1.6)
+
+#: copperhead's dark theme, for the dark versions of the video (the user asked for them
+#: on 2026-10-22). The page, card, line and text colours are copperhead-site's own
+#: (src/styles/global.css, the dark side of each light-dark() pair: --bg, --surface,
+#: --line, --text, --text-dim, --copper-hi). The three chart colours are the dataviz
+#: validator's dark band (OKLCH L 0.48 to 0.67) on the dark card: copperhead's --copper,
+#: #D08F39, sits at 0.70 and fails it, so copper is a step darker. Purple against teal
+#: warns for deutan vision (Delta E 6.9), which is legal because purple is only ever a
+#: dashed, labelled requirement. Keys are the light colours as make.py and this script
+#: write them; `go_dark` swaps every one.
+DARK = {
+    "#f1f1f3": "#09090b",   # page: --bg
+    "#ffffff": "#131317",   # card: --surface
+    "#dedee3": "#26262c",   # card edge and hairlines: --line
+    "#e4e4e8": "#000000",   # the card's shadow
+    "#0a0a0a": "#ededef",   # ink: --text
+    "#57575e": "#b4b4bc",   # soft text
+    "#5e5e66": "#9b9ba5",   # notes: --text-dim
+    "#e8e8ec": "#222228",   # gridlines
+    "#bcbcc4": "#4a4a54",   # axes
+    "#a75f14": "#c4852f",   # copper
+    "#8f5210": "#e5a855",   # copper text: --copper-hi
+    "#008b9f": "#1ea3b5",   # teal
+    "#8650c4": "#a77be3",   # purple
+    "#1f7a37": "#6fd38b", "#b8281f": "#ff8f86", "#55555e": "#b4b4bc",     # PASS, FAIL, UNKNOWN, as fang's terminal
+    "#e4f2e7": "#16301f", "#fbe7e5": "#3a1a18", "#ebebef": "#24242a",     # their tints
+    "#a9a9b2": "#5d5d68",   # OLD, a reading a later one replaces
+    "#ecd3b8": "#3d2a14", "#e9c9a6": "#4d3418", "#bfe3e8": "#123b42",     # GLOW, TINT, TEAL_GLOW
+    "#e0ae74": "#b26b22", "#7fc6d2": "#16879a",                           # P_FILL, N_FILL
+    "#eef0e2": "#202219",   # DIELECTRIC
+}
+
+#: Colours set by name in the dark theme, where one light value maps to two dark ones.
+DARK_NAMED = {"P_LINE": "#F6C27E", "N_LINE": "#8FE6F2"}
+
+#: copperhead's lockup for a dark ground (copperhead-site, branding/png/copperhead-lockup-h512.png).
+LOCKUP_DARK = ROOT / "brand" / "copperhead-lockup-dark.png"
+
+
+def go_dark(M) -> None:
+    """Draw from here on in copperhead's dark theme: every colour constant in make.py and
+    here that DARK names, and every default argument that holds one, takes its dark value;
+    the lockup is the one for a dark ground; matplotlib hatches in the dark ink."""
+    def swap(v):
+        if isinstance(v, str):
+            return DARK.get(v.lower(), v)
+        if isinstance(v, tuple) and not hasattr(v, "_fields"):
+            return tuple(swap(x) for x in v)
+        if isinstance(v, dict):
+            return {swap(k): swap(x) for k, x in v.items()}
+        return v
+
+    def defaults(f):
+        if f.__defaults__:
+            f.__defaults__ = swap(f.__defaults__)
+        if f.__kwdefaults__:
+            f.__kwdefaults__ = swap(f.__kwdefaults__)
+
+    for mod in (M, sys.modules[__name__]):
+        names = vars(mod)
+        for name, value in list(names.items()):
+            if name.isupper() and name != "DARK":
+                names[name] = swap(value)
+            elif inspect.isfunction(value) and value.__module__ == mod.__name__:
+                defaults(value)
+            elif inspect.isclass(value) and value.__module__ == mod.__name__:
+                for member in vars(value).values():
+                    member = getattr(member, "__func__", member)
+                    if inspect.isfunction(member):
+                        defaults(member)
+    globals().update(DARK_NAMED)
+    M.COPPERHEAD_LOCKUP = LOCKUP_DARK
+    M._lockup.cache_clear()
+    plt.rcParams["hatch.color"] = DARK["#0a0a0a"]
 
 
 def nb(text: str) -> str:
@@ -238,8 +324,13 @@ class Board:
         px, py = self.P(x, y)
         return (px - self.x0) * self.p.ss, (py - self.y0) * self.p.ss
 
-    def poly(self, pts, fill):
-        self.draw.polygon([self.L(*q) for q in pts], fill=fill)
+    def poly(self, pts, fill, outline=None, width=0.0):
+        if outline:
+            self.draw.polygon([self.L(*q) for q in pts], fill=fill, outline=outline,
+                              width=max(1, round(width * self.p.ss)))
+        else:
+            self.draw.polygon([self.L(*q) for q in pts], fill=fill)
+
 
     def line(self, pts, fill, width):
         if len(pts) > 1:
@@ -284,6 +375,41 @@ class Board:
     def copper(self, g, pc=None, nc=None):
         self.poly(g["copper"]["N"], nc or self.M.TEAL)
         self.poly(g["copper"]["P"], pc or self.M.COPPER)
+
+    def dashdot(self, pts, fill, width, pattern=(9.0, 3.0, 2.0, 3.0)):
+        """A dash-dot polyline, the pattern (on, off, on, off) in page pixels."""
+        lengths = [math.dist(self.P(*a), self.P(*b)) for a, b in zip(pts, pts[1:])]
+        k, left, on, cur = 0, pattern[0], True, []
+        for (a, b), d in zip(zip(pts, pts[1:]), lengths):
+            pos = 0.0
+            while pos < d - 1e-9:
+                step = min(left, d - pos)
+                u0, u1 = pos / d, (pos + step) / d
+                pa = (a[0] + (b[0] - a[0]) * u0, a[1] + (b[1] - a[1]) * u0)
+                pb = (a[0] + (b[0] - a[0]) * u1, a[1] + (b[1] - a[1]) * u1)
+                if on:
+                    cur = cur or [pa]
+                    cur.append(pb)
+                pos += step
+                left -= step
+                if left <= 1e-9:
+                    if on and cur:
+                        self.line(cur, fill, width)
+                        cur = []
+                    k = (k + 1) % len(pattern)
+                    on, left = not on, pattern[k]
+        if on and cur:
+            self.line(cur, fill, width)
+
+    def trace(self, g, centres=True):
+        """P and N in the report's style: light fills, a dark outline and the centrelines."""
+        ink = self.M.INK
+        self.poly(g["copper"]["N"], N_FILL, ink, 1.3)
+        self.poly(g["copper"]["P"], P_FILL, ink, 1.3)
+        if centres:
+            for net in ("P", "N"):
+                self.dashdot([tuple(q) for q in g["centreline"][net]], ink, 1.0)
+
 
     def paste(self):
         if self.p.drawing:
@@ -332,6 +458,18 @@ def arrow(p, a, b, colour, width=1.8, size=9.0, both=True):
 
 
 _MATH: dict = {}
+
+
+def dashed_box(p, box, colour, width=1.4, dash=6.0, gap=4.0):
+    """A rectangle in dashes on the page, as a drawing marks a detail."""
+    x0, y0, x1, y1 = box
+    for a, b in (((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0))):
+        length, k = math.dist(a, b), 0.0
+        while k < length:
+            e = min(k + dash, length)
+            p.line([(a[0] + (b[0] - a[0]) * k / length, a[1] + (b[1] - a[1]) * k / length),
+                    (a[0] + (b[0] - a[0]) * e / length, a[1] + (b[1] - a[1]) * e / length)], colour, width)
+            k += dash + gap
 
 
 def math_image(tex: str, px: float, ss: float, colour: str) -> Image.Image:
@@ -686,8 +824,8 @@ class Video:
         M = self.M
         p = shape.new()
         t = p.type
-        y = M._heading(p, p.top, kicker, nb(headline))
-        ix0, iy0, ix1, iy1 = p.card((M.MARGIN, y + t.body * 0.4, p.right, shape.bottom(p)))
+        y = self.heading(p, kicker, nb(headline))
+        ix0, iy0, ix1, iy1 = p.card((M.MARGIN, y, p.right, shape.bottom(p)))
         size = t.note * 1.08
         width = ix1 - ix0
         if tag:
@@ -700,6 +838,18 @@ class Video:
             p.text(ix0, iy1 - t.note * 0.1, nb(source), "medium", t.note * 0.86, M.NOTE)
             iy1 -= t.note * 1.5
         return p, (ix0, yy + size * 1.0, ix1, iy1)
+
+    def heading(self, p, kicker, headline):
+        """The scene's kicker and headline, as make.py's `_heading` sets them but with
+        more air: the user found the top of the frame crowded on 2026-10-22, so the
+        kicker sits further under the lockup, the headline further under the kicker,
+        and the card further under the headline. Returns where the card starts."""
+        M, t = self.M, p.type
+        y = p.top + t.note * 1.6
+        p.text(M.MARGIN, y, kicker, "bold", t.note, M.COPPER_TEXT)
+        y = p.paragraph(M.MARGIN, y + t.headline * 1.4, p.right - M.MARGIN, M._runs((headline, "bold")),
+                        t.headline, t.headline * 1.18, balance=True)
+        return y + t.subtitle * 0.45 + t.body * 0.85
 
     def key(self, p, x0, x1, y, entries, size=None):
         """A key centred over x0..x1 from y; returns its foot."""
@@ -741,10 +891,10 @@ class Video:
         yr = (-hat - 0.02, slab + (hat + 0.02 if strip else top_room))
         d = Drawing(p, box, xr, yr)
         d.rect(xr[0], 0, xr[1] - xr[0], slab, DIELECTRIC, z=1)
-        d.rect(xr[0], -hat, xr[1] - xr[0], hat, "white", hatch="//////", z=2)
+        d.rect(xr[0], -hat, xr[1] - xr[0], hat, M.CARD, hatch="//////", z=2)
         d.line([(xr[0], 0), (xr[1], 0)], M.INK, 1.6, z=3)
         if strip:
-            d.rect(xr[0], slab, xr[1] - xr[0], hat, "white", hatch="//////", z=2)
+            d.rect(xr[0], slab, xr[1] - xr[0], hat, M.CARD, hatch="//////", z=2)
             d.line([(xr[0], slab), (xr[1], slab)], M.INK, 1.6, z=3)
         else:
             d.line([(xr[0], slab), (xr[1], slab)], M.INK, 0.8, z=3)
@@ -787,8 +937,18 @@ class Video:
         d.paste()
         return d
 
+    def traces(self, d, g, centres=True, lw=1.1):
+        """P and N on a Drawing in the report's style: light fills, a dark outline and the
+        dash-dot centreline a length report measures."""
+        ink = self.M.INK
+        d.poly(g["copper"]["N"], N_FILL, ink, lw, z=3)
+        d.poly(g["copper"]["P"], P_FILL, ink, lw, z=3)
+        if centres:
+            for net in ("P", "N"):
+                d.centre(g["centreline"][net], ink, 0.9, z=4)
+
     def plan(self, p, box, g, xr=None, yr=None, dims=False, ports=True, k=None, lit=(), lit_colour=None,
-             centres=False):
+             centres=True):
         """A board in plan as an engineering drawing: P and N in their colours
         with a thin outline, the four lumped ports as ink squares, and with
         `dims` the leg length and the bend radius (the pitch is on the
@@ -800,13 +960,12 @@ class Video:
         n = p.type.note
         d = Drawing(p, box, xr, yr, k)
         for x0, y0, x1, y1 in lit:
-            pad = d.mm(10)
-            d.rect(x0 - pad, y0 - pad, x1 - x0 + 2 * pad, y1 - y0 + 2 * pad, lit_colour or GLOW, z=1)
-        d.poly(g["copper"]["N"], M.TEAL, "#00505c", 0.8, z=3)
-        d.poly(g["copper"]["P"], M.COPPER, "#5e3408", 0.8, z=3)
-        if centres:
-            for net in ("P", "N"):
-                d.centre(g["centreline"][net], "#ffffff", 0.9, z=4)
+            # the section a scene is about, in a chain-line box as a drawing marks a detail
+            pad = d.mm(8)
+            xa, ya, xb, yb = x0 - pad, y0 - pad, x1 + pad, y1 + pad
+            d.line([(xa, ya), (xb, ya), (xb, yb), (xa, yb), (xa, ya)], lit_colour or M.INK, 1.1,
+                   dashes=(5.0, 1.6, 1.2, 1.6), z=6)
+        self.traces(d, g, centres)
         if ports:
             side = d.mm(max(5.0, 0.24 * d.k))
             for q in g["ports"]:
@@ -833,37 +992,126 @@ class Video:
         """A small plan of a tuned board near its bend, the tuning lit."""
         d = self.plan(p, box, g, xr=(6.6, self.L + self.Rb + self.s + 0.35),
                       yr=(-(self.Rb + self.s) - 0.35, -self.Rb + 1.15), ports=False,
-                      lit=[self.section(g)] if lit else ())
+                      lit=[self.section(g)] if lit else (), centres=False)
         return d
 
     # -- shots ------------------------------------------------------------------------
 
     def title_shot(self, shape):
+        """Scene 1: the title beside (or over) board C drawn as the report's figure 2
+        draws it: the traces outlined with their centrelines, the tuning section
+        dimensioned (a, b, A), the tuning section and its distance to the bend marked
+        under N, labels set in the report's italic, and a caption close under the
+        drawing. make.py hands the figure a square box and sets a caption under it;
+        the drawing is wider than tall, so the caption is set here instead, under the
+        drawing, and on the landscape shape its last line sits level with the last line
+        of the words beside it. The fold spacing and the pitch are dimensioned in later
+        scenes: at this scale their gaps have no room for a label."""
         M, R = self.M, self.R
         g = R.geo["C"]
-
-        def figure(p, box):
-            # the tuned board as the drawings show it: the tuning lit, each trace outlined,
-            # and its centreline, the line a length report measures, dash-dotted in white
-            x0, y0, x1, y1 = box
-            d = Drawing(p, (x0, y0 + (y1 - y0) * 0.18, x1, y1 - (y1 - y0) * 0.18),
-                        (5.5, self.L + self.Rb + self.s + 0.4), (-(self.Rb + self.s) - 0.5, self.Rb + self.s + 0.5))
-            sx0, sy0, sx1, sy1 = self.section(g)
-            pad = 0.22
-            d.ax.add_patch(FancyBboxPatch(
-                (sx0 - pad, sy0 - pad), sx1 - sx0 + 2 * pad, sy1 - sy0 + 2 * pad,
-                boxstyle=f"round,pad=0,rounding_size={d.mm(6)}", fc=GLOW, ec="none", zorder=1))
-            d.poly(g["copper"]["N"], M.TEAL, "#00505c", 0.8, z=3)
-            d.poly(g["copper"]["P"], M.COPPER, "#5e3408", 0.8, z=3)
-            for net in ("P", "N"):
-                d.centre(g["centreline"][net], "#ffffff", 1.2, z=4)
-            d.paste()
-
+        tu = g["tuning"]
+        Rb, s, w, L = self.Rb, self.s, self.w, self.L
+        c = tu["chamfer"]
+        A, top_, bottom = tu["amplitude"], tu["top"], tu["bottom"]
+        xs0, xs1 = tu["section_start"], tu["section_end"]
+        xr = (xs0 - 1.55, L + Rb + s + 0.45)
+        yr = (-(Rb + s) - 0.95, Rb + s + 0.4)
+        aspect = (yr[1] - yr[0]) / (xr[1] - xr[0])
         line = ("A U-bend makes one trace of a differential pair shorter. This video shows why that "
                 "matters and how much of it a serpentine fixes.")
+        caption = nb(f"Board C. The serpentine makes P exactly as long as N: "
+                     f"{g['length']['P']:.3f} mm each by the length report.")
+
+        def words_foot(p):
+            """The last baseline of the words make.py sets right of the figure on a
+            landscape page: its tile, title and line, centred in the room (as
+            _title_shot's words() and Page.centred set them)."""
+            t = p.type
+            size = t.title
+            u = size * 0.72 / 19.25
+            mark, gap = 22.75 * u, size * 0.3
+            split = M.MARGIN + (p.right - M.MARGIN) * 0.5
+            x0, x1 = split + 20, p.right
+            name, rest = TITLE
+            runs = [(name, "bold", M.brand.COPPER), (f": {rest}", "bold", M.INK)]
+            n_title = len(p.lines(runs, size, x1 - x0 - mark - gap, balance=True))
+            n_line = len(p.lines(M._runs((line, "medium", M.SOFT)), t.subtitle, x1 - x0, balance=True))
+            height = (size * 1.6 + size * 1.35 + (n_title - 1) * size * 1.14 + t.subtitle * 2.5
+                      + (n_line - 1) * t.subtitle * 1.42)
+            bottom = shape_.bottom(p)
+            return p.top + (bottom - p.top - height) / 2 + height
+
+        def figure(p, box):
+            if not p.drawing:
+                return
+            t = p.type
+            n = t.note
+            x0, y0, x1, y1 = box
+            width = x1 - x0
+            lead = n * 1.35
+            under = n * 1.3                                  # drawing foot to the caption's first baseline
+            if not p.wide:
+                # the square's height holds the drawing and its caption with room to spare, so
+                # the drawing takes the page's full measure where that height allows it
+                width = min(p.right - M.MARGIN, (y1 - y0 - under - 2 * lead) / aspect)
+                x0 = (M.MARGIN + p.right) / 2 - width / 2
+            n_cap = len(p.lines(M._runs((caption, "medium", M.NOTE)), n, width, balance=True))
+            if p.wide:
+                foot = words_foot(p)
+                first = foot - (n_cap - 1) * lead
+                height = width * aspect
+                top = first - under - height
+                if top < p.top:                                # never into the head: narrower, same foot
+                    height = first - under - p.top
+                    width = height / aspect
+                    x0 = x1 - width
+                    top = p.top
+            else:
+                height = width * aspect
+                block = height + under + (n_cap - 1) * lead
+                top = y0 + (y1 - y0 - block) / 2
+                first = top + height + under
+            d = Drawing(p, (x0, top, x0 + width, top + height), xr, yr)
+            self.traces(d, g)
+            # the traces stop short of the left edge, leaving room for their names
+            xcut = xs0 - 1.05
+            d.rect(xr[0] - 0.1, yr[0], xcut - xr[0] + 0.1, yr[1] - yr[0], M.PAGE, z=5)
+            ink = M.INK
+            ex1 = xs0 + c                                   # the first excursion's rising leg
+            ex2, ex3, ex4 = ex1 + top_, ex1 + top_ + bottom, ex1 + 2 * top_ + bottom
+            ytop = -Rb + A
+            # a, b, a along the excursions, inside the U
+            yd = ytop + w / 2 + d.mm(n * 1.2)
+            for xa, xb, lab in ((ex1, ex2, "$a$"), (ex2, ex3, "$b$"), (ex3, ex4, "$a$")):
+                for xx in (xa, xb):
+                    d.line([(xx, ytop + w / 2 + d.mm(4)), (xx, yd + d.mm(5))], ink, 0.9, z=7)
+                d.arrow((xa, yd), (xb, yd))
+                d.text((xa + xb) / 2, yd + d.mm(n * 0.7), lab, n * 1.05)
+            # A, between centrelines, left of the first excursion
+            xa_ = xs0 - 0.42
+            d.line([(xa_ - d.mm(5), ytop), (ex1 - d.mm(4), ytop)], ink, 0.9, z=7)
+            d.arrow((xa_, -Rb), (xa_, ytop))
+            d.text(xa_ - d.mm(n * 0.45), (-Rb + ytop) / 2, "$A$", n * 1.05, ha="right")
+            # the tuning section and D, under N
+            yrow = -(Rb + s) - w / 2 - d.mm(n * 0.9)
+            for xx, y_from in ((xs0, -Rb - w / 2), (xs1, -Rb - w / 2), (L, -(Rb + s) - w / 2)):
+                d.line([(xx, y_from - d.mm(3)), (xx, yrow - d.mm(5))], ink, 0.9, z=7)
+            d.arrow((xs0, yrow), (xs1, yrow))
+            d.arrow((xs1, yrow), (L, yrow))
+            d.text((xs0 + xs1) / 2, yrow - d.mm(n * 0.75), r"$\mathit{tuning\ section}$", n * 1.05)
+            d.text((xs1 + L) / 2, yrow - d.mm(n * 0.75), "$D$", n * 1.05)
+            d.text(L + d.mm(6), yrow, r"$\mathit{bend}$", n * 1.05, ha="left")
+            # the traces' names, at the launch side
+            for name, y_ in (("P", -Rb), ("N", -(Rb + s)), ("P", Rb), ("N", Rb + s)):
+                d.text(xcut - d.mm(5), y_, f"${name}$", n * 1.15, ha="right")
+            d.paste()
+            p.paragraph(x0, first, width, M._runs((caption, "medium", M.NOTE)), n, lead, align="c")
+
+        shape_ = shape
         if shape.page[0] < shape.page[1]:
             shape = _padded(M, shape)
-        return M._title_shot(shape, line, title=TITLE, figure=figure)
+            shape_ = shape
+        return M._title_shot(shape, line, title=TITLE, figure=figure, caption="")
 
     def pair_scene(self, shape):
         """Scene 2: what a differential receiver does. An illustration, not a run."""
@@ -991,8 +1239,10 @@ class Video:
         return p.image.reduce(M.SS)
 
     def bend_scene(self, shape):
-        """Scene 5: the bend as the report's figure 1, its arcs lit in turn, then
-        the length difference and the skew it makes, set as mathematics."""
+        """Scene 5: the bend as the report's figure 1, each trace's length round the bend
+        traced along its centreline in turn and named as the report names it (pi R and
+        pi (R + s)), then the length difference and the skew it makes, set as
+        mathematics."""
         M, R = self.M, self.R
         a_ = R.r["analytic"]
         p, box = self.scene(shape, "Where the skew comes from",
@@ -1004,17 +1254,14 @@ class Video:
         n = t.note
         g = R.geo["B"]
         Rb, s, L = self.Rb, self.s, self.L
-        xr = (L - 2.4, L + Rb + s + 0.4)
+        xr = (L - 2.4, L + Rb + s + 1.25)
         yr = (-(Rb + s) - 0.4, Rb + s + 0.4)
         if p.wide:
             draw_box, words_box = self.split(box, True, 0.5)
         else:
             draw_box, words_box = self.split(box, False, 0.56)
         d = Drawing(p, draw_box, xr, yr)
-        d.poly(g["copper"]["N"], M.TEAL, "#00505c", 0.8, z=3)
-        d.poly(g["copper"]["P"], M.COPPER, "#5e3408", 0.8, z=3)
-        for net in ("P", "N"):
-            d.centre(g["centreline"][net], "#ffffff", 1.0, z=4)
+        self.traces(d, g)
         d.line([(L - 0.3, 0), (L + 0.3, 0)], M.INK, 1.0, z=6)
         d.line([(L, -0.3), (L, 0.3)], M.INK, 1.0, z=6)
         d.centre([(xr[0] + 0.1, 0), (L - 0.4, 0)], M.INK, 0.8)
@@ -1029,6 +1276,10 @@ class Video:
         arc = lambda r: [(L + r * math.cos(u), r * math.sin(u))  # noqa: E731
                          for u in np.linspace(-math.pi / 2, math.pi / 2, 90)]
         inner, outer = arc(Rb), arc(Rb + s)
+        ai, ao = math.radians(-62), math.radians(36)
+        ri, ro = Rb - 0.42, Rb + s + self.w / 2 + 0.1
+        arcs = [(inner, P_LINE, r"$\pi R$", (L + ri * math.cos(ai), ri * math.sin(ai)), "mm"),
+                (outer, N_LINE, r"$\pi (R + s)$", (L + ro * math.cos(ao), ro * math.sin(ao)), "lb")]
         base = p.image
         rows = [("P, the inner trace", rf"$\pi R = {math.pi * Rb:.3f}\ \mathrm{{mm}}$", M.COPPER),
                 ("N, the outer trace", rf"$\pi (R + s) = {math.pi * (Rb + s):.3f}\ \mathrm{{mm}}$", M.TEAL),
@@ -1042,17 +1293,22 @@ class Video:
         def frame(stage, final):
             p.image = base.copy()
             p.draw = ImageDraw.Draw(p.image)
-            b = Board(M, p, draw_box, xr, yr)
-            glow = self.w * b.k * 2.8
-            if stage > 0 or final:
-                pts = [b.P(*q) for q in partial(inner, 1.0 if final else ease(stage))]
-                if len(pts) > 1:
-                    p.line(pts, GLOW, glow)
-            if stage > 1 or final:
-                pts = [b.P(*q) for q in partial(outer, 1.0 if final else ease(stage - 1))]
-                if len(pts) > 1:
-                    p.line(pts, TEAL_GLOW, glow)
             p.image.paste(drawing, (round(d.x0 * p.ss), round(d.y0 * p.ss)), drawing)
+            # each trace's length round the bend, traced along its centreline, then named
+            for i, (pts_mm, colour, tex, at, anchor) in enumerate(arcs):
+                u = 1.0 if final else ease(stage - i)
+                if u <= 0:
+                    continue
+                pts = [d.P(*q) for q in partial(pts_mm, u)]
+                if len(pts) > 1:
+                    p.line(pts, colour, 3.4)
+                alpha = 1.0 if final else clamp((stage - i - 0.75) / 0.3)
+                if alpha > 0:
+                    before = p.image.copy()
+                    put_math(p, *d.P(*at), tex, n * 1.2, M.INK, anchor=anchor)
+                    if alpha < 1:
+                        p.image = Image.blend(before, p.image, alpha)
+                        p.draw = ImageDraw.Draw(p.image)
             wx0, wy0, wx1, wy1 = words_box
             step = (wy1 - wy0) / (len(rows) + 0.6)
             for i, (name, tex, colour) in enumerate(rows):
@@ -1122,7 +1378,7 @@ class Video:
             for x, y in c:
                 for z in (za, zb):
                     ticks.append([(x - d, y, z - AIR_DRAWN * 0.04), (x + d, y, z + AIR_DRAWN * 0.04)])
-            ax.add_collection3d(Line3DCollection(ticks, colors="#57575e", lw=1.0, zorder=7))
+            ax.add_collection3d(Line3DCollection(ticks, colors=self.M.SOFT, lw=1.0, zorder=7))
             ax.set_xlim(x0, x1)
             ax.set_ylim(y0, y1)
             ax.set_zlim(0, TOP)
@@ -1255,7 +1511,8 @@ class Video:
         g, gd = R.geo["B"], R.geo["D"]
         if p.wide:
             left, right = self.split(box, True, 0.5, gap=28)
-            close, chart = self.split(right, False, 0.5, gap=18)
+            # the chart gets the larger share: its title, ticks and axis titles need the height
+            close, chart = self.split(right, False, 0.4, gap=24)
         else:
             left, rest = self.split(box, False, 0.32, gap=18)
             close, chart = self.split(rest, True, 0.5, gap=24)
@@ -1331,16 +1588,26 @@ class Video:
                 if not final and u < 1:
                     xc = z.x0 + z.w * u
                     p.rect((xc - 1.25, z.y0, xc + 1.25, z.y0 + z.h), fill=M.COPPER)
-            k = 3 if final else min(3, max(0, int((stage - 2.0) / 0.3) + 1)) if stage >= 2.0 else 0
-            if k > 1:
-                p.line([(pl.X(x), pl.Y(v)) for x, v in pts[:k]], M.COPPER, 2.4)
-            for i, (x, v) in enumerate(pts[:k]):
+            # each mesh's point, its segment from the last and its label fade in over 0.25 of
+            # the stage, 0.3 apart, rather than pop (frame_check flagged them on 2026-10-22)
+            for i, (x, v) in enumerate(pts):
+                a = 1.0 if final else clamp((stage - 2.0 - 0.3 * i) / 0.25)
+                if a <= 0:
+                    continue
+                before = p.image.copy() if a < 1 else None
+                if i > 0:
+                    (x0_, v0_) = pts[i - 1]
+                    p.line([(pl.X(x0_), pl.Y(v0_)), (pl.X(x), pl.Y(v))], M.COPPER, 2.4)
+                    p.disc(pl.X(x0_), pl.Y(v0_), 5.5, M.COPPER)
                 p.disc(pl.X(x), pl.Y(v), 5.5, M.COPPER)
                 if i == 1:
                     pl.errbar(pl.X(x), v - unc, v + unc, M.INK, cap=6, width=1.6)
                 # first above right, the middle below left (clear of its error bar), the last above left
                 dx, dy, anchor = ((12, -10, "ls"), (-12, n * 1.15, "rs"), (-12, -10, "rs"))[i]
                 p.text(pl.X(x) + dx, pl.Y(v) + dy, f"{v:.2f}", "bold", n * 0.9, M.INK, anchor=anchor)
+                if before is not None:
+                    p.image = Image.blend(before, p.image, a)
+                    p.draw = ImageDraw.Draw(p.image)
             return p.image.reduce(M.SS)
 
         return frame, 3.0
@@ -1478,10 +1745,7 @@ class Video:
         xr = (xs0 - 1.3, L + Rb + s + 0.4)
         yr = (-(Rb + s) - 0.75, -Rb + A + 0.95)
         d = Drawing(p, draw_box, xr, yr)
-        d.poly(g["copper"]["N"], M.TEAL, "#00505c", 0.8, z=3)
-        d.poly(g["copper"]["P"], M.COPPER, "#5e3408", 0.8, z=3)
-        for net in ("P", "N"):
-            d.centre(g["centreline"][net], "#ffffff", 0.9, z=4)
+        self.traces(d, g)
         x1 = xs0 + c
         x2, x3, x4 = x1 + top_, x1 + top_ + bottom, x1 + 2 * top_ + bottom
         ytop = -Rb + A
@@ -1495,28 +1759,43 @@ class Video:
         d.line([(xa_ - d.mm(5), ytop), (x1 - d.mm(4), ytop)], M.INK, 0.9, z=7)
         d.arrow((xa_, -Rb), (xa_, ytop))
         d.text(xa_ - d.mm(8), (-Rb + ytop) / 2, "$A$", n * 1.1, ha="right")
-        d.text(xr[0] + d.mm(4), -Rb - w / 2 - d.mm(n * 0.75), "P", n, weight=700, ha="left")
-        d.text(xr[0] + d.mm(4), -(Rb + s) - w / 2 - d.mm(n * 0.75), "N", n, weight=700, ha="left")
+        d.text(xr[0] + d.mm(4), -Rb - w / 2 - d.mm(n * 0.8), "$P$", n * 1.15, ha="left")
+        d.text(xr[0] + d.mm(4), -(Rb + s) - w / 2 - d.mm(n * 0.8), "$N$", n * 1.15, ha="left")
         d.text((x1 + x4) / 2, -(Rb + s) - w / 2 - d.mm(n * 1.1),
                rf"Two excursions, $A = {A:.3f}\ \mathrm{{mm}}$", n * 0.95, colour=M.SOFT)
         d.paste()
+        # the length report as a table: a heavy rule over the head and under the last row,
+        # a swatch of each trace's fill beside its name, the difference under a thin rule
         x0, y0, x1_, y1 = rep_box
         size = t.body
-        rows = [("P", f"{g['length']['P']:.3f} mm", M.COPPER), ("N", f"{g['length']['N']:.3f} mm", M.TEAL)]
-        h = size * 1.4 * 4.4
+        lp, ln = g["length"]["P"], g["length"]["N"]
+        rows = [("P", lp, P_FILL), ("N", ln, N_FILL), (f"P {MINUS} N", abs(lp - ln), None)]
+        step = size * 1.5
+        h = n * 1.25 + n * 1.35 + n * 0.6 + step * 3 + size * 0.75
         top = y0 + (y1 - y0 - h) / 2
-        bw = min(x1_ - x0, size * 13)
+        bw = min(x1_ - x0, size * 11)
         bx0 = x0 + (x1_ - x0 - bw) / 2
-        p.rect((bx0, top, bx0 + bw, top + h), fill=M.PAGE, radius=10)
-        yy = top + size * 1.5
-        p.text(bx0 + size * 0.8, yy, "Length report", "bold", n, M.SOFT)
-        for name, value, colour in rows:
-            yy += size * 1.45
-            p.text(bx0 + size * 0.8, yy, name, "bold", size, colour)
-            p.text(bx0 + bw - size * 0.8, yy, nb(value), "bold", size, M.INK, anchor="rs")
-        yy += size * 1.6
-        p.tick(bx0 + size * 1.2, yy, size, M.PASS)
-        p.text(bx0 + size * 2.0, yy, "Equal", "bold", size, M.PASS)
+        bx1 = bx0 + bw
+        yy = top + n
+        p.text(bx0, yy, "Length report", "bold", n, M.SOFT)
+        yy += n * 0.6
+        p.rect((bx0, yy - 0.8, bx1, yy + 0.8), fill=M.INK)
+        yy += n * 1.35
+        p.text(bx0, yy, "Trace", "bold", n * 0.92, M.SOFT)
+        p.text(bx1, yy, "Length (mm)", "bold", n * 0.92, M.SOFT, anchor="rs")
+        yy += n * 0.6
+        p.rect((bx0, yy - 0.45, bx1, yy + 0.45), fill=M.INK)
+        for i, (name, value, swatch) in enumerate(rows):
+            if i == 2:
+                p.rect((bx0, yy + size * 0.3 - 0.45, bx1, yy + size * 0.3 + 0.45), fill=M.INK)
+            yy += step
+            if swatch:
+                p.rect((bx0, yy - size * 0.72, bx0 + size * 0.95, yy - size * 0.02), fill=swatch, outline=M.INK,
+                       width=1)
+            p.text(bx0 + (size * 1.35 if swatch else 0), yy, name, "bold", size, M.INK)
+            p.text(bx1, yy, f"{value:.3f}", "bold", size, M.INK, anchor="rs")
+        yy += size * 0.75
+        p.rect((bx0, yy - 0.8, bx1, yy + 0.8), fill=M.INK)
         return p.image.reduce(M.SS)
 
     def bars_scene(self, shape):
@@ -1568,7 +1847,7 @@ class Video:
                 val = R.skew(v) * u
                 cx = pl.X(i)
                 bw = slot * 0.46
-                p.rect((cx - bw / 2, pl.Y(val), cx + bw / 2, pl.bottom), fill=colour, radius=3)
+                p.rect((cx - bw / 2, pl.Y(val), cx + bw / 2, pl.bottom), fill=colour)
                 if u >= 1:
                     un = R.unc(v) or 0.0
                     pl.errbar(cx, R.skew(v) - un, R.skew(v) + un, M.INK, cap=8, width=2.0)
@@ -1605,7 +1884,7 @@ class Video:
         centre = [q for q in centre if -self.Rb - 0.01 <= q[1] <= -self.Rb + a + 0.01]
         path = inside_path(centre, 0.62 * self.w / 2)
         ky = self.key(p, box[0], box[2], box[1], [(M.INK, "Centre line: what the length report measures", True),
-                                                  (M.COPPER, "The path the current takes", False)])
+                                                  (P_LINE, "The path the current takes", False)])
         if p.wide:
             draw_box, det_box = self.split((box[0], ky, box[2], box[3]), True, 0.7, gap=24)
         else:
@@ -1617,7 +1896,7 @@ class Video:
         k = 0.17
         aspect = (dy1 - dy0 - n * 1.6) / (dx1 - dx0)
         dd = Drawing(p, (dx0, dy0 + n * 1.4, dx1, dy1), (x1 - k, x1 + k), (ytop - k * aspect * 1.2, ytop + k * aspect * 0.8))
-        dd.poly(g["copper"]["P"], TINT, M.INK, 1.0, z=2)
+        dd.poly(g["copper"]["P"], P_FILL, M.INK, 1.0, z=2)
         dd.centre(g["centreline"]["P"], M.INK, 1.2, z=5)
         yh = ytop + dd.mm(n * 1.0)
         dd.line([(x1, ytop - c + dd.mm(4)), (x1, yh + dd.mm(4))], M.INK, 0.9, z=7)
@@ -1632,13 +1911,13 @@ class Video:
             p.image = base.copy()
             p.draw = ImageDraw.Draw(p.image)
             b = Board(M, p, draw_box, xr, yr)
-            b.poly(g["copper"]["P"], TINT)
+            b.poly(g["copper"]["P"], P_FILL, M.INK, 1.3)
             u1 = 1.0 if final else ease(stage)
             u2 = 1.0 if final else ease(stage - 1)
             if u1 > 0:
                 b.dashed(partial(centre, u1), M.INK, 2.2, dash=9, gap=6)
             if u2 > 0:
-                b.line(partial(path, u2), M.COPPER, 4.0)
+                b.line(partial(path, u2), P_LINE, 4.0)
             b.paste()
             return p.image.reduce(M.SS)
 
@@ -1698,7 +1977,7 @@ class Video:
                 out += [(xl, +1), (xl + tun["top"], -1)]
             return out
 
-        def paint(stage, final, arrows, glow):
+        def paint(stage, final, arrows):
             p.image = base.copy()
             p.draw = ImageDraw.Draw(p.image)
             for i, ((v, name), (cx0, cy0, cx1, cy1)) in enumerate(zip(cases, cells)):
@@ -1707,10 +1986,7 @@ class Video:
                 b = Board(M, p, (cx0, cy0 + n * 1.5, cx1, cy1 - n * 1.5), spans[v], yr, k=k)
                 vs = verticals(g)
                 tun = g["tuning"]
-                if v == "S_tight" and glow:
-                    (xa, _), (xb, _) = vs[1], vs[2]
-                    b.box((xa, -self.Rb + 0.12), (xb, -self.Rb + a - 0.12), GLOW, radius=4)
-                b.copper(g)
+                b.trace(g)
                 b.paste()
                 if arrows:
                     for x, dd in vs:
@@ -1740,7 +2016,7 @@ class Video:
                     eta = R.eta(v)
                     cx = pl.X(i)
                     bw = (pl.X(1) - pl.X(0)) * 0.42
-                    p.rect((cx - bw / 2, pl.Y(eta * u), cx + bw / 2, pl.bottom), fill=M.COPPER, radius=3)
+                    p.rect((cx - bw / 2, pl.Y(eta * u), cx + bw / 2, pl.bottom), fill=M.COPPER)
                     if u >= 1:
                         vals = [el[v][l] for l in el[v]]
                         pl.errbar(cx, min(vals), max(vals), M.INK, cap=8, width=2.0)
@@ -1748,14 +2024,11 @@ class Video:
             return p.image
 
         def frame(stage, final):
-            # the current arrows and the glow on the gap fade in over 0.3 of the sweep, rather than pop
+            # the current arrows fade in over 0.3 of the sweep, rather than pop
             a1 = 1.0 if final else clamp((stage - 0.4) / 0.3)
-            a2 = 1.0 if final else clamp((stage - 1.0) / 0.3)
-            img = paint(stage, final, a1 >= 1, a2 >= 1)
+            img = paint(stage, final, a1 > 0)
             if 0 < a1 < 1:
-                img = Image.blend(paint(stage, final, False, False).copy(), img.copy(), a1)
-            elif 0 < a2 < 1:
-                img = Image.blend(paint(stage, final, True, False).copy(), img.copy(), a2)
+                img = Image.blend(paint(stage, final, False).copy(), img.copy(), a1)
             return img.reduce(M.SS)
 
         return frame, 2.0
@@ -1795,7 +2068,7 @@ class Video:
                 bw = slot * 0.3
                 for dx, var, ref, colour in ((-bw * 0.56, v, "B", M.COPPER), (bw * 0.56, v + "_sl", "B_sl", M.TEAL)):
                     val = R.removed(var, ref)
-                    p.rect((cx + dx - bw / 2, pl.Y(val * u), cx + dx + bw / 2, pl.bottom), fill=colour, radius=3)
+                    p.rect((cx + dx - bw / 2, pl.Y(val * u), cx + dx + bw / 2, pl.bottom), fill=colour)
                     if u >= 1:
                         p.text(cx + dx, pl.Y(val) + n * 1.25, f"{val:.0f}", "bold", n * 0.95, M.CARD, anchor="ms")
             return p.image.reduce(M.SS)
@@ -1826,7 +2099,8 @@ class Video:
                 cell = (dx0 + i * (ww + 16), dy0, dx0 + i * (ww + 16) + ww, dy1)
             cx0, cy0, cx1, cy1 = cell
             p.text(cx0, cy0 + n, name, "bold", n, colour)
-            self.plan(p, (cx0, cy0 + n * 1.4, cx1, cy1 - 6), R.geo[v], lit=[self.section(R.geo[v])], ports=False)
+            self.plan(p, (cx0, cy0 + n * 1.4, cx1, cy1 - 6), R.geo[v], lit=[self.section(R.geo[v])], ports=False,
+                      centres=False)
         cx0, cy0, cx1, cy1 = chart
         eqh = put_math(p, cx1, cy0 + n * 0.2, r"$\tau(f) = 2\arctan|S_{cd21}\,/\,S_{dd21}|\,/\,\omega$", n * 1.1,
                        M.INK, anchor="rt")[1]
@@ -2009,17 +2283,18 @@ class Video:
                                        "sized from their own residual")
 
     def rules_scene(self, shape):
-        """Scene 19: four rules, each fading in beside a small drawing, with the
-        run result behind it. On the landscape shape they sit in a 2 by 2 grid
-        of panels, so the card has no empty half; on the tall shapes, one under
-        another."""
+        """Scene 19: the four rules as a table, set as a paper sets one: a heavy rule over
+        the head and under the last row, a thin one under the head and hairlines between
+        the rows. Each row is a small drawing of the layout, the rule and the run result
+        behind it, and the rows fade in one by one. On the landscape shape the result has
+        a column of its own; on the tall shapes it sits under the rule."""
         M, R = self.M, self.R
         M_ = M
         p = shape.new()
         t = p.type
         n = t.note
-        y = M._heading(p, p.top, "For a bent pair at this pitch", nb(f"Four rules from {R.runs} solver runs"))
-        ix0, iy0, ix1, iy1 = p.card((M.MARGIN, y + t.body * 0.4, p.right, shape.bottom(p)))
+        y = self.heading(p, "For a bent pair at this pitch", nb(f"Four rules from {R.runs} solver runs"))
+        ix0, iy0, ix1, iy1 = p.card((M.MARGIN, y, p.right, shape.bottom(p)))
         cals = [R.skew(v) for v in ("F_cal", "C_cal", "D_cal")]
         rules = [("Use few excursions.",
                   f"One excursion leaves {R.skew('F'):.1f} ps. Four leave {R.skew('D'):.1f} ps."),
@@ -2030,75 +2305,85 @@ class Video:
                   f"{R.skew('C'):.1f} ps next to the bend. {R.skew('C_far'):.1f} ps at the launch."),
                  ("Size it by delay, not length.",
                   f"One more solver run: {min(cals):.2f} to {max(cals):.1f} ps.")]
-        cells = []
+        W = ix1 - ix0
         if p.wide:
-            g = 22
-            cw, ch = (ix1 - ix0 - g) / 2, (iy1 - iy0 - g) / 2
-            for i in range(4):
-                cx, cy = ix0 + (i % 2) * (cw + g), iy0 + (i // 2) * (ch + g)
-                cells.append((cx, cy, cx + cw, cy + ch))
+            cols = {"glyph": (ix0, ix0 + W * 0.15), "rule": (ix0 + W * 0.19, ix0 + W * 0.50),
+                    "result": (ix0 + W * 0.54, ix1)}
+            heads = [("Layout", "glyph"), ("Rule", "rule"), ("Result in these runs", "result")]
         else:
-            step = (iy1 - iy0) / 4
-            for i in range(4):
-                cells.append((ix0, iy0 + i * step, ix1, iy0 + (i + 1) * step))
+            cols = {"glyph": (ix0, ix0 + W * 0.26), "rule": (ix0 + W * 0.31, ix1)}
+            heads = [("Layout", "glyph"), ("Rule and result in these runs", "rule")]
+        top = iy0 + 2
+        head = top + n * 1.45
+        under = head + n * 0.7
+        foot = iy1 - 2
+        step = (foot - under) / len(rules)
+        p.rect((ix0, top - 0.8, ix1, top + 0.8), fill=M.INK)
+        for name, col in heads:
+            p.text(cols[col][0], head, name, "bold", n * 0.95, M.SOFT)
+        p.rect((ix0, under - 0.45, ix1, under + 0.45), fill=M.INK)
+        for i in range(1, len(rules)):
+            p.rect((ix0, under + step * i - 0.5, ix1, under + step * i + 0.5), fill=M.EDGE)
+        p.rect((ix0, foot - 0.8, ix1, foot + 0.8), fill=M.INK)
         base = p.image
 
         def icon(i, box):
             x0, y0, x1, y1 = box
             w, h = x1 - x0, y1 - y0
             ym = y0 + h * 0.62
-            cp = M_.COPPER
+            cp, tl, lw = M_.COPPER, M_.TEAL, 3.0
             if i == 0:
                 p.line([(x0, ym), (x0 + w * 0.32, ym), (x0 + w * 0.32, y0 + h * 0.2), (x0 + w * 0.68, y0 + h * 0.2),
-                        (x0 + w * 0.68, ym), (x1, ym)], cp, 4)
-                p.line([(x0, ym + h * 0.22), (x1, ym + h * 0.22)], M_.TEAL, 4)
+                        (x0 + w * 0.68, ym), (x1, ym)], cp, lw)
+                p.line([(x0, ym + h * 0.22), (x1, ym + h * 0.22)], tl, lw)
             elif i == 1:
                 pts = [(x0, ym)]
                 for k in range(3):
                     xa = x0 + w * (0.08 + k * 0.3)
                     pts += [(xa, ym), (xa, y0 + h * 0.15), (xa + w * 0.14, y0 + h * 0.15), (xa + w * 0.14, ym)]
                 pts.append((x1, ym))
-                p.line(pts, cp, 4)
-                p.line([(x0, ym + h * 0.22), (x1, ym + h * 0.22)], M_.TEAL, 4)
+                p.line(pts, cp, lw)
+                p.line([(x0, ym + h * 0.22), (x1, ym + h * 0.22)], tl, lw)
             elif i == 2:
                 r1, r2 = h * 0.24, h * 0.42
                 cx, cy = x0 + w * 0.7, y0 + h * 0.5
-                for r, col in ((r1, cp), (r2, M_.TEAL)):
+                for r, col in ((r1, cp), (r2, tl)):
                     arcp = [(cx + r * math.cos(u), cy + r * math.sin(u)) for u in np.linspace(-math.pi / 2, math.pi / 2, 30)]
-                    p.line([(x0, cy - r), (cx, cy - r)] + arcp + [(x0, cy + r)], col, 4)
-                p.rect((cx - w * 0.36, cy - r1 - h * 0.14, cx - w * 0.06, cy - r1 + h * 0.14), fill=GLOW, radius=6)
+                    p.line([(x0, cy - r), (cx, cy - r)] + arcp + [(x0, cy + r)], col, lw)
+                # where the serpentine goes, marked as a drawing marks a detail
+                dashed_box(p, (cx - w * 0.36, cy - r1 - h * 0.16, cx - w * 0.06, cy - r1 + h * 0.16), M_.INK, 1.4)
             else:
                 xs = np.linspace(x0, x1, 40)
-                for col in (M_.COPPER, M_.TEAL):
+                for col in (cp, tl):
                     p.line([(x, y1 - h * 0.1 - (h * 0.75) * 0.5 * (1 + math.tanh((x - (x0 + w / 2)) / (w * 0.09))))
-                            for x in xs], col, 4)
+                            for x in xs], col, lw)
 
         def draw_rule(i):
-            x0, y0, x1, y1 = cells[i]
             rule, why = rules[i]
-            if p.wide:
-                p.rect((x0, y0, x1, y1), fill=M.PAGE, radius=12)
-                pad = n * 1.1
-                iw = min((x1 - x0) * 0.34, (y1 - y0) * 1.1)
-                ih = iw * 0.5
-                icon(i, (x0 + pad, (y0 + y1) / 2 - ih / 2, x0 + pad + iw, (y0 + y1) / 2 + ih / 2))
-                tx = x0 + pad * 2 + iw
-                width = x1 - pad - tx
-            else:
-                iw = min((x1 - x0) * 0.3, (y1 - y0) * 2.6)
-                icon(i, (x0 + 6, y0 + (y1 - y0) * 0.22, x0 + 6 + iw, y0 + (y1 - y0) * 0.78))
-                tx = x0 + iw + t.body * 1.4
-                width = x1 - tx
-            size, note = t.body * 1.05, n
-            bal = p.wide                              # no line left with one word on it
+            cy = under + step * (i + 0.5)
+            gx0, gx1 = cols["glyph"]
+            gw = (gx1 - gx0) * 0.86
+            gh = min(gw * 0.5, step * 0.62)
+            icon(i, (gx0, cy - gh / 2, gx0 + gw, cy + gh / 2))
+            size, note = t.body, n * 1.02
+            rx0, rx1 = cols["rule"]
             with p.measuring():
-                h1 = p.paragraph(tx, 0, width, [(rule, "bold", M.INK)], size, size * 1.2, balance=bal)
-                h2 = p.paragraph(tx, 0, width, [(nb(why), "medium", M.SOFT)], note, note * 1.3, balance=bal)
-            gap = size * 0.35 + note * 1.3          # first block's last baseline to the second's first
-            total = size * 0.75 + h1 + gap + h2 + note * 0.25
-            top = (y0 + y1) / 2 - total / 2 + size * 0.75
-            yy = p.paragraph(tx, top, width, [(rule, "bold", M.INK)], size, size * 1.2, balance=bal)
-            p.paragraph(tx, yy + gap, width, [(nb(why), "medium", M.SOFT)], note, note * 1.3, balance=bal)
+                h1 = p.paragraph(rx0, 0, rx1 - rx0, [(rule, "bold", M.INK)], size, size * 1.2, balance=p.wide)
+            if p.wide:
+                wx0, wx1 = cols["result"]
+                with p.measuring():
+                    h2 = p.paragraph(wx0, 0, wx1 - wx0, [(nb(why), "medium", M.SOFT)], note, note * 1.3, balance=True)
+                p.paragraph(rx0, cy - (h1 + size * 0.72) / 2 + size * 0.72, rx1 - rx0, [(rule, "bold", M.INK)], size,
+                            size * 1.2, balance=True)
+                p.paragraph(wx0, cy - (h2 + note * 0.72) / 2 + note * 0.72, wx1 - wx0, [(nb(why), "medium", M.SOFT)],
+                            note, note * 1.3, balance=True)
+            else:
+                with p.measuring():
+                    h2 = p.paragraph(rx0, 0, rx1 - rx0, [(nb(why), "medium", M.SOFT)], note, note * 1.3)
+                gap = size * 0.35 + note * 1.3          # the rule's last baseline to the result's first
+                total = size * 0.72 + h1 + gap + h2
+                yy = p.paragraph(rx0, cy - total / 2 + size * 0.72, rx1 - rx0, [(rule, "bold", M.INK)], size, size * 1.2)
+                p.paragraph(rx0, yy + gap, rx1 - rx0, [(nb(why), "medium", M.SOFT)], note, note * 1.3)
 
         def frame(stage, final):
             p.image = base.copy()
@@ -2119,28 +2404,54 @@ class Video:
         return frame, 4.0
 
     def summary_shot(self, shape):
-        """Scene 20: the summary card, with a foot line naming the runs and the
-        bounds behind it."""
+        """Scene 20: the summary as a table under the conclusion: the untuned bend's skew
+        at the receiver, and each serpentine's at exactly the right length and sized in
+        the solver, each with its bound, over a foot line naming the runs and the bounds."""
         M, R = self.M, self.R
-        cals = [abs(R.skew(v)) for v in ("C_cal", "D_cal", "F_cal")]
-        line = (f"Untuned bend: {R.skew('B'):.1f} ps. Serpentines of exactly the right length: "
-                f"{R.skew('F'):.1f} to {R.skew('D'):.1f} ps. Serpentines sized in the solver: "
-                f"{min(cals):.2f} to {max(cals):.1f} ps.")
         bounds = [R.unc(v) for v in ("B", "C", "D", "F") if R.unc(v)]
         foot = (f"{R.runs} runs  ·  3 meshes  ·  numerical bound {PM}{min(bounds):.2f} to "
                 f"{PM}{max(bounds):.1f} ps")
+        rows = [("Untuned bend", ps(R.skew("B"), R.unc("B")), None)]
+        rows += [(name, ps(R.skew(v), R.unc(v)), ps(R.skew(v + "_cal"), R.unc(v + "_cal")))
+                 for v, name in (("F", "1 excursion"), ("C", "2 excursions"), ("D", "4 excursions"))]
         p = shape.new()
         t = p.type
+        n, size = t.note, t.body
+        width = min(p.right - M.MARGIN, size * 30)
+        x0 = (M.MARGIN + p.right) / 2 - width / 2
+        pad = 24                                            # Page.card's inner margin
+        lead = size * 1.65
+        card_h = pad * 2 + n * 1.0 + n * 1.2 + n * 1.5 + n * 0.75 + lead * len(rows) + size * 0.4
 
         def block(top):
-            y = top + t.note
-            p.text(p.width / 2, y, f"Run in openEMS {R.version}", "bold", t.note, M.TEAL, anchor="ms")
+            y = top + n
+            p.text(p.width / 2, y, f"Run in openEMS {R.version}", "bold", n, M.TEAL, anchor="ms")
             y = p.paragraph(M.MARGIN, y + t.title * 1.25, p.right - M.MARGIN,
                             M._runs(("Equal length is not equal delay", "bold")), t.title, t.title * 1.14, align="c")
-            y = p.paragraph(M.MARGIN, y + t.subtitle * 2, p.right - M.MARGIN, M._runs((nb(line), "medium", M.SOFT)),
-                            t.subtitle, t.subtitle * 1.42, align="c")
-            p.text(p.width / 2, y + t.subtitle * 1.6, nb(foot), "medium", t.note, M.NOTE, anchor="ms")
-            return y + t.subtitle * 1.6
+            cy0 = y + t.title * 0.6
+            ix0, iy0, ix1, _ = p.card((x0, cy0, x0 + width, cy0 + card_h))
+            c1, c2 = ix0 + (ix1 - ix0) * 0.66, ix1
+            yy = iy0 + n
+            p.text(ix0, yy, nb("Skew at the receiver (ps), with the numerical bound"), "medium", n, M.SOFT)
+            yy += n * 1.2
+            p.rect((ix0, yy - 0.8, ix1, yy + 0.8), fill=M.INK)
+            yy += n * 1.5
+            p.text(ix0, yy, "Tuning", "bold", n * 0.95, M.SOFT)
+            p.text(c1, yy, "Equal length", "bold", n * 0.95, M.SOFT, anchor="rs")
+            p.text(c2, yy, "Sized in the solver", "bold", n * 0.95, M.SOFT, anchor="rs")
+            yy += n * 0.75
+            p.rect((ix0, yy - 0.45, ix1, yy + 0.45), fill=M.INK)
+            for name, equal, sized in rows:
+                yy += lead
+                p.text(ix0, yy - size * 0.25, name, "medium", size, M.INK)
+                p.text(c1, yy - size * 0.25, nb(equal), "bold", size, M.INK, anchor="rs")
+                p.text(c2, yy - size * 0.25, nb(sized) if sized else EN_DASH, "bold", size,
+                       M.COPPER_TEXT if sized else M.NOTE, anchor="rs")
+            yy += size * 0.4
+            p.rect((ix0, yy - 0.8, ix1, yy + 0.8), fill=M.INK)
+            y = cy0 + card_h + n * 2.2
+            p.text(p.width / 2, y, nb(foot), "medium", n, M.NOTE, anchor="ms")
+            return y
 
         p.centred(block, bottom=shape.bottom(p))
         return p.image.reduce(M.SS)
@@ -2276,13 +2587,18 @@ def main(argv=None) -> int:
     parser.add_argument("--only", help="draw only the shape with this name")
     parser.add_argument("--shots", help="with --stills, only these shots (1-based, comma separated)")
     parser.add_argument("--mid", action="store_true", help="with --stills, also save each sweep half-way")
+    parser.add_argument("--dark", action="store_true",
+                        help="draw in copperhead's dark theme, each file named with -dark")
     args = parser.parse_args(argv)
     spec = importlib.util.spec_from_file_location("social_make", args.make)
     M = importlib.util.module_from_spec(spec)
     sys.modules["social_make"] = M
     spec.loader.exec_module(M)
+    if args.dark:
+        go_dark(M)
     video = Video(M, Runs())
     shapes = {k: v for k, v in video.shapes.items() if not args.only or k == args.only}
+    theme = "-dark" if args.dark else ""
 
     if args.stills:
         args.stills.mkdir(parents=True, exist_ok=True)
@@ -2296,18 +2612,18 @@ def main(argv=None) -> int:
                 else:
                     frame, end = shot[1]()
                     if args.mid:
-                        frame(end * 0.5, False).save(args.stills / f"{name}-{i + 1:02d}-mid.png")
+                        frame(end * 0.5, False).save(args.stills / f"{name}{theme}-{i + 1:02d}-mid.png")
                     image = frame(end, True)
-                image.save(args.stills / f"{name}-{i + 1:02d}.png")
+                image.save(args.stills / f"{name}{theme}-{i + 1:02d}.png")
         print("stills in", args.stills)
         return 0
 
     OUT.mkdir(parents=True, exist_ok=True)
     for name, shape in shapes.items():
-        out = OUT / f"{name}.mp4"
+        out = OUT / f"{name}{theme}.mp4"
         # No track for now, at the user's request (2026-10-19).
         seconds = M._encode(video.frames(shape), out, shape.size)
-        video.poster(shape).save(OUT / f"{name}.png", optimize=True)
+        video.poster(shape).save(OUT / f"{name}{theme}.png", optimize=True)
         print(out, f"{seconds:.1f} s")
     return 0
 
